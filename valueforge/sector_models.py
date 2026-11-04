@@ -51,10 +51,11 @@ def classify_sector(row) -> str | None:
         return "ASSET_MANAGER"
     if any(term in text for term in ("insurance","life insurer","general insurer")):
         return "INSURANCE"
+    # NBFC wording contains the word "bank"; check it before the bank rule.
+    if any(term in text for term in ("nbfc","non banking financial","nonbanking financial","housing finance","microfinance")):
+        return "NBFC"
     if "bank" in text and not any(term in text for term in ("investment bank","merchant bank")):
         return "BANK"
-    if any(term in text for term in ("nbfc","non banking financial","housing finance","microfinance")):
-        return "NBFC"
     if any(term in text for term in ("stock broker","stockbroking","broking","brokerage")):
         return "BROKER"
     if any(term in text for term in ("finance","financial","lending","credit")):
