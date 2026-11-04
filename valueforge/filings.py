@@ -42,6 +42,19 @@ def _exchange(record):
     return "BSE" if str(record.source.value).startswith("bse") else "NSE"
 
 
+def _sort_pending_filings(records):
+    """Prioritise the most recent company periods, then drain older history."""
+    return sorted(
+        records,
+        key=lambda record: (
+            record.period_to or date.min,
+            record.filing_ts or datetime.min,
+            record.symbol or "",
+        ),
+        reverse=True,
+    )
+
+
 def _registry_keys(registry):
     if registry.empty or "filing_key" not in registry:
         return set()
@@ -180,13 +193,9 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     registry = pd.read_csv(REGISTRY_PATH) if REGISTRY_PATH.exists() else pd.DataFrame()
     processed = _registry_keys(registry)
     pending = [r for r in queue.records if _key(r) not in processed and r.xbrl_url and r.consolidated]
-    # Historical periods first so the panel builds a multi-year record; the
-    # persistent queue prevents older filings from being dropped between runs.
-    pending.sort(key=lambda r: (
-        r.period_to or date.max,
-        r.filing_ts or datetime.max,
-        r.symbol
-    ))
+    # Prioritise current financial statements so live-listed companies gain
+    # usable coverage early; older periods remain queued for CAGR backfill.
+    pending = _sort_pending_filings(pending)
     batch = pending[:max(0, int(limit))]
 
     status = {
