@@ -5,7 +5,7 @@ Research-only Indian equity value-investing desk for NSE and BSE.
 ## Daily market operation
 After merge, GitHub Actions runs weekdays at 21:15 IST and on code changes. It reads the public TejHQ Indian Markets annual Parquet rollups, selects the most recent EOD snapshot from each exchange, joins daily derived metrics, and runs a deterministic research screen. The data source is third-party processed exchange bhavcopy, not intraday quotes: https://github.com/tejhq/tej-bazaar and https://huggingface.co/datasets/tejhq/indian-markets.
 
-The dashboard fetches the latest available EOD data directly from the public dataset when no local snapshot is present. GitHub Actions stores each complete market/scan CSV as a 90-day workflow artifact; only compact status JSON and AI report markdown are committed to Git to avoid repository history growing by several megabytes per trading day.
+The dashboard fetches the latest available EOD data directly from the public dataset when no local snapshot is present. GitHub Actions commits compact status, exchange security-master and parsed filing data; raw market snapshots and raw XBRL payloads are not committed or published.
 
 ## Install locally (Python 3.11+)
 ```bash
