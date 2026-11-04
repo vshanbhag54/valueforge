@@ -182,37 +182,63 @@ def load_security_master(path="data/master/security_master.csv"):
 
 
 def attach_market_prices(master, market):
-    """Left-join EOD prices to the security master; preserve listed but untraded rows."""
+    """Left-join EOD prices onto exchange listings; retain securities without quotes."""
     if master.empty:
         return market.copy()
-    base = master.copy()
-    quotes = market.copy()
+    base=master.copy().reset_index(drop=True)
+    quotes=market.copy().reset_index(drop=True)
+    for frame in (base,quotes):
+        frame["exchange"]=frame["exchange"].astype(str).str.upper()
+        frame["symbol"]=frame["symbol"].astype(str).str.strip().str.upper()
+        if "isin" in frame:
+            frame["isin"]=frame["isin"].astype("string").str.strip().str.upper()
+    base["_master_row"]=range(len(base))
+    # Prefer ISIN, then exchange+symbol, then BSE numeric scrip code.
     if "isin" in base and "isin" in quotes:
-        # ISIN is stable across symbol changes and avoids cross-exchange ticker collisions.
-        left = base[base["isin"].notna() & (base["isin"].astype(str) != "")]
-        right = quotes[quotes["isin"].notna() & (quotes["isin"].astype(str) != "")]
-        merged = left.merge(right, on=["exchange", "isin"], how="left", suffixes=("", "_quote"))
-        missing = base[~base.index.isin(left.index)].copy()
-        if not missing.empty:
-            symbol_join = missing.merge(quotes, on=["exchange", "symbol"], how="left", suffixes=("", "_quote"))
-            merged = pd.concat([merged, symbol_join], ignore_index=True, sort=False)
+        left=base[base["isin"].notna() & ~base["isin"].isin(["","NAN"])].copy()
+        right=quotes[quotes["isin"].notna() & ~quotes["isin"].isin(["","NAN"])].copy()
+        merged=left.merge(right,on=["exchange","isin"],how="left",suffixes=("","_quote"))
+        used=set(left["_master_row"])
+        missing=base[~base["_master_row"].isin(used)].copy()
     else:
-        merged = base.merge(quotes, on=["exchange", "symbol"], how="left", suffixes=("", "_quote"))
-    # Where a market field has a quote-suffixed counterpart, prefer the quote;
-    # preserve master identity fields when the quote is not available.
+        merged=pd.DataFrame()
+        missing=base.copy()
+    # Retry unmatched BSE securities using the official six-digit scrip code.
+    bse=missing[missing["exchange"]=="BSE"].copy()
+    others=missing[missing["exchange"]!="BSE"].copy()
+    if not bse.empty and "security_code" in bse:
+        bse["_code"]=bse["security_code"].astype("string").str.replace(r"\\.0$","",regex=True)
+        q=quotes[quotes["exchange"]=="BSE"].copy()
+        q["_code"]=q["symbol"].astype("string").str.replace(r"\\.0$","",regex=True)
+        code_join=bse.merge(q,on=["exchange","_code"],how="left",suffixes=("","_quote"))
+        code_join=code_join.drop(columns=["_code"],errors="ignore")
+        code_hit=code_join.get("close",pd.Series(index=code_join.index,dtype=float)).notna()
+        # Keep code-joined rows, including those with no quote; no symbol retry
+        # can safely improve a numeric BSE security-code match.
+        parts=[merged,code_join] if not merged.empty else [code_join]
+    else:
+        parts=[merged] if not merged.empty else []
+    if not others.empty:
+        symbol_join=others.merge(quotes,on=["exchange","symbol"],how="left",suffixes=("","_quote"))
+        parts.append(symbol_join)
+    if not bse.empty and "security_code" not in bse:
+        parts.append(bse.merge(quotes,on=["exchange","symbol"],how="left",suffixes=("","_quote")))
+    merged=pd.concat(parts,ignore_index=True,sort=False) if parts else base
+
     for key in quotes.columns:
-        qkey = key + "_quote"
+        qkey=key+"_quote"
         if qkey in merged:
             if key in merged:
-                if key in {"name", "isin", "series"}:
-                    merged[key] = merged[key].where(merged[key].notna() & (merged[key].astype(str) != ""), merged[qkey])
+                if key in {"name","isin","series","sector"}:
+                    merged[key]=merged[key].where(merged[key].notna() & (merged[key].astype(str)!=""),merged[qkey])
                 else:
-                    merged[key] = merged[qkey].where(merged[qkey].notna(), merged[key])
-                merged = merged.drop(columns=[qkey])
+                    merged[key]=merged[qkey].where(merged[qkey].notna(),merged[key])
+                merged=merged.drop(columns=[qkey])
             else:
-                merged = merged.rename(columns={qkey: key})
+                merged=merged.rename(columns={qkey:key})
+    merged=merged.drop(columns=["_master_row"],errors="ignore")
     if "snapshot_date" not in merged:
-        merged["snapshot_date"] = pd.NA
-    merged["price_status"] = merged["close"].notna().map({True: "EOD_PRICE_AVAILABLE", False: "NO_EOD_PRICE"}) if "close" in merged else "NO_EOD_PRICE"
-    merged["universe_source"] = "NSE + BSE exchange security masters"
-    return merged
+        merged["snapshot_date"]=pd.NA
+    merged["price_status"]=merged["close"].notna().map({True:"EOD_PRICE_AVAILABLE",False:"NO_EOD_PRICE"}) if "close" in merged else "NO_EOD_PRICE"
+    merged["universe_source"]="NSE + BSE exchange security masters"
+    return merged.drop_duplicates(["exchange","symbol"],keep="last").reset_index(drop=True)
