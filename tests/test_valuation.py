@@ -29,7 +29,7 @@ def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
         {"close":100.0,"fcf":-10.0,"paid_up_capital":100.0,"face_value":10.0,
          "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
         {"close":100.0,"fcf":100.0,"paid_up_capital":None,"face_value":None,
-         "sales_cagr_5y":10.0,"profit_cagr_5y":8.0},
+         "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
     ])
     out=apply_intrinsic_valuation(frame)
     assert pd.isna(out.loc[0,"dcf_fair_value_base"])
