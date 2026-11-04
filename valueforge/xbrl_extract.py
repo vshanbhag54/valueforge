@@ -258,6 +258,7 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
     isin = filing.get("isin") or _get_isin(xml_bytes)
     out.update({
         "symbol": filing.get("symbol"),
+        "security_code": str(filing.get("symbol", "")).removeprefix("BSE-") if str(filing.get("symbol", "")).startswith("BSE-") else filing.get("security_code"),
         "name": filing.get("company"),
         "exchange": filing.get("exchange", "NSE"),
         "isin": isin,
