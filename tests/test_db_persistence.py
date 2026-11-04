@@ -1,3 +1,5 @@
+import pandas as pd
+
 from valueforge import db
 
 
@@ -32,7 +34,7 @@ def test_filing_registry_persists_parse_failures_and_skips_unchanged_rows():
             "audited":True,"fact_count":0,
         },
     ]
-    written=db._persist_filing_registry(cur,registry)
+    written=db._persist_filing_registry(cur,pd.DataFrame(registry))
     assert written==1
     insert_calls=[call for call in cur.calls if "insert into valueforge.filings" in call[0]]
     issue_calls=[call for call in cur.calls if "insert into valueforge.data_quality_issues" in call[0]]
@@ -60,7 +62,7 @@ def test_financial_statement_persistence_reprocesses_only_new_parser_version():
         "statement_completeness_pct":100,"sales":200.0,"net_profit":20.0,
         "equity":100.0,"assets":200.0,"total_debt":20.0,"ocf":24.0,
     }]
-    written=db._persist_statements(cur,fundamentals)
+    written=db._persist_statements(cur,pd.DataFrame(fundamentals))
     assert written==1
     statement_calls=[call for call in cur.calls if "insert into valueforge.financial_statements" in call[0]]
     assert len(statement_calls)==1
