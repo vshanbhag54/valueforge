@@ -1,3 +1,5 @@
+import pandas as pd
+
 from valueforge.xbrl_extract import extract_filing_fundamentals
 
 
@@ -49,9 +51,9 @@ def test_extracts_quarter_and_normalizes_currency_to_crore():
     assert row["total_debt"]==10
     assert round(row["debt_to_equity"],3)==0.333
     assert round(row["ocf_to_net_profit"],2)==1.2
-    assert round(row["roe"],2)==18.18
+    assert pd.isna(row.get("roe"))  # a quarterly earnings figure is not annual ROE
     assert round(row["interest_coverage"],2)==8
-    assert round(row["roce"],2)==20
+    assert pd.isna(row.get("roce"))  # quarter-only PBT is not annual ROCE
     assert row["paid_up_capital"]==5
     assert row["face_value"]==10
 
