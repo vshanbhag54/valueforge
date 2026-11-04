@@ -13,13 +13,13 @@ def test_normalize_nse_equity_master_fields():
     assert row["isin"]=="INE000A01001"
     assert row["exchange"]=="NSE"
     assert row["face_value"]==10
-    assert pd.isna(row["paid_up_capital"])
+    assert "paid_up_capital" not in row.index
 
 
-def test_normalize_bse_master_and_convert_face_value_paise():
+def test_normalize_bse_master_face_value_in_rupees():
     raw=[{
         "scrip_id":"TCS","SCRIP_CD":532540,"SCRIP_NAME":"TCS Limited",
-        "ISIN_NUMBER":"INE467B01029","GROUP":"A","Face_Value":1000,"Industry":"IT",
+        "ISIN_NUMBER":"INE467B01029","GROUP":"A","Face_Value":10,"Industry":"IT",
     }]
     row=normalize_bse_equity(raw).iloc[0]
     assert row["symbol"]=="TCS"
