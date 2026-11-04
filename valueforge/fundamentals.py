@@ -25,7 +25,7 @@ ALIASES={
 "net_profit":["net profit","net profit rs.cr.","profit after tax","pat"],"sales":["sales","sales rs.cr.","revenue","revenue from operations"],
 "total_debt":["total debt","borrowings","debt"],"cash":["cash","cash equivalents","cash and bank"],
 "equity":["equity","shareholders funds","total equity"],"ocf":["operating cash flow","cash from operations","cash flow from operating activities"],
-"fcf":["free cash flow","fcf"],"auditor_qualification":["auditor qualification","auditor opinion","audit opinion"],
+"capex":["capex","capital expenditure","purchase of property plant and equipment"],"fcf":["free cash flow","fcf"],"auditor_qualification":["auditor qualification","auditor opinion","audit opinion"],
 "related_party_flags":["related party flags","related party transactions","related party concerns"],
 "contingent_liabilities":["contingent liabilities","contingent liability"],
 "basic_eps":["basic eps","eps basic","earnings per share basic"],
@@ -40,7 +40,7 @@ ALIASES={
 NUMERIC={
 "pe","pb","market_cap_cr","roe","roce","debt_to_equity","interest_coverage","operating_margin",
 "ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct",
-"net_profit","sales","total_debt","cash","equity","ocf","fcf","basic_eps","paid_up_capital",
+"net_profit","sales","total_debt","cash","equity","ocf","capex","fcf","basic_eps","paid_up_capital",
 "face_value","assets","profit_before_tax","finance_cost","operating_profit","period_days","fact_count","context_count"
 }
 
