@@ -105,7 +105,15 @@ def _ttm_xbrl_fundamentals(history):
 def _latest_xbrl(history):
     if history.empty: return pd.DataFrame()
     ttm=_ttm_xbrl_fundamentals(history)
-    annual=history[history.get("period_kind",pd.Series("",index=history.index)).astype("string").str.lower().str.contains("annual",na=False)].copy()
+    kind=history.get("period_kind",pd.Series("",index=history.index)).astype("string").str.lower()
+    annual=history[kind.str.contains("annual",na=False)].copy()
+    if "audited" in annual:
+        audited=annual["audited"].astype("string").str.lower().isin(["true","1","yes","y"])
+        annual=annual[audited]
+    # Do not substitute a single quarter or half-year result when there is
+    # not yet a valid four-quarter TTM or audited annual statement.
+    if ttm.empty and annual.empty:
+        return pd.DataFrame()
     if not ttm.empty:
         combined=pd.concat([annual,ttm],ignore_index=True,sort=False)
         chosen=latest_fundamentals(combined)
@@ -119,12 +127,9 @@ def _latest_xbrl(history):
                         if col in chosen and pd.notna(match.iloc[-1].get(col)):
                             chosen.at[ix,col]=match.iloc[-1][col]
     else:
-        source=annual if not annual.empty else history
-        chosen=latest_fundamentals(source)
+        chosen=latest_fundamentals(annual)
 
-    # Five-year growth requires six annual statements (five full intervals)
-    # with no missing/abnormally spaced year. A two- or four-year CAGR is not
-    # mislabeled as five-year growth.
+    # Five-year growth requires six consecutive audited annual statements.
     if not chosen.empty and not annual.empty:
         annual=annual.copy()
         annual["_period"]=pd.to_datetime(annual.get("period_end"),errors="coerce")
