@@ -79,17 +79,25 @@ def evaluate_sector_metrics(row) -> dict:
             "sector_metrics_status":"NOT_APPLICABLE",
             "sector_metrics_missing":"",
             "sector_metrics_coverage_pct":None,
-            "sector_quality_score":None,
             "sector_research_status":"NOT_FINANCIAL_SECTOR",
         }
     spec=SECTOR_METRICS[model]
     required=spec["required"]
     present=[field for field in required if _value(row,field) is not None]
     missing=[field for field in required if field not in present]
-    coverage=round(100*len(present)/len(required),1)
-    # A transparent, low-conviction coverage score is useful for sorting
-    # diligence queues; it is never allowed to become a value-candidate score.
-    quality_score=coverage
+    source_url=_token(row.get("sector_data_source_url") or row.get("source_url"))
+    if not source_url.startswith(("http://","https://")):
+        missing.append("sector_data_source_url")
+    period=pd.to_datetime(row.get("sector_data_as_of") or row.get("period_end"),errors="coerce")
+    if pd.isna(period):
+        missing.append("sector_data_as_of")
+    else:
+        age=(pd.Timestamp.now().normalize()-period.normalize()).days
+        if age<0 or age>450:
+            missing.append("sector_data_as_of_current")
+    required_count=len(required)+2
+    present_count=len(present)+(1 if source_url.startswith(("http://","https://")) else 0)+(1 if pd.notna(period) and 0 <= (pd.Timestamp.now().normalize()-period.normalize()).days <= 450 else 0)
+    coverage=round(100*present_count/required_count,1)
     if missing:
         status="INCOMPLETE"
         research_status="SECTOR_MODEL_REQUIRED"
@@ -101,7 +109,6 @@ def evaluate_sector_metrics(row) -> dict:
         "sector_metrics_status":status,
         "sector_metrics_missing":",".join(missing),
         "sector_metrics_coverage_pct":coverage,
-        "sector_quality_score":quality_score,
         "sector_research_status":research_status,
     }
 
