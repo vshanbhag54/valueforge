@@ -67,9 +67,14 @@ def get_security_master_data():
     return fetch_security_master()
 
 try:
-    with st.spinner("Loading NSE/BSE exchange data..."):
+    with st.spinner("Loading the latest NSE/BSE end-of-day snapshot..."):
         market, market_status = get_market_data()
-        security_master, security_master_status = get_security_master_data()
+    try:
+        with st.spinner("Loading exchange-listed equity universe..."):
+            security_master, security_master_status = get_security_master_data()
+    except Exception as exc:
+        security_master=pd.DataFrame()
+        security_master_status={"coverage":"UNAVAILABLE","error":f"{type(exc).__name__}: {exc}"}
     if not security_master.empty:
         market=attach_market_prices(security_master,market)
 except Exception as exc:
