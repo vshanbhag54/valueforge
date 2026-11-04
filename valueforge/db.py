@@ -474,7 +474,23 @@ def persist_research_snapshot(market, security_master, fundamentals, ranked, sum
             counts["statements"] = _persist_statements(cur,fundamentals)
             _record_ingestion(cur,"exchange_security_master","COMPLETED",len(security_master),counts["securities"],{"rows":len(security_master)})
             _record_ingestion(cur,"eod_market_prices","COMPLETED",len(market),counts["prices"],{"rows":len(market)})
-            _record_ingestion(cur,"exchange_xbrl_filings","COMPLETED",len(filing_registry) if filing_registry is not None else 0,counts["filings"],{"registry_rows":len(filing_registry) if filing_registry is not None else 0})
+            registry_rows=filing_registry if filing_registry is not None else pd.DataFrame()
+            parse_statuses=registry_rows.get("parse_status",pd.Series(dtype=object)).astype(str) if not registry_rows.empty else pd.Series(dtype=object)
+            parse_failures=int(parse_statuses.str.startswith("PARSE_FAILED").sum())
+            parsed_count=int(parse_statuses.eq("PARSED").sum())
+            xbrl_run_status="PARTIAL" if parse_failures>0 or summary.get("filings_status",{}).get("fetch_failed",0)>0 or summary.get("filings_status",{}).get("discovery_errors") else "COMPLETED"
+            _record_ingestion(
+                cur,"exchange_xbrl_filings",xbrl_run_status,
+                len(registry_rows),counts["filings"],
+                {
+                    "registry_rows":len(registry_rows),
+                    "parsed_rows":parsed_count,
+                    "parse_failed_rows":parse_failures,
+                    "fetch_failed_rows":int(summary.get("filings_status",{}).get("fetch_failed",0) or 0),
+                    "pending_queue":int(summary.get("filings_status",{}).get("pending_after_batch",0) or 0),
+                    "discovery_errors":summary.get("filings_status",{}).get("discovery_errors",{}),
+                },
+            )
             _record_ingestion(cur,"financial_statements","COMPLETED",len(fundamentals),counts["statements"],{"rows":len(fundamentals)})
             cur.execute(
                 """
