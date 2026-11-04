@@ -3,7 +3,23 @@ on:
   push:
     branches: [main]
     paths:
+      - "app.py"
+      - "requirements.txt"
+      - "valueforge/agents.py"
+      - "valueforge/cli.py"
+      - "valueforge/db.py"
+      - "valueforge/financial_quality.py"
+      - "valueforge/filings.py"
+      - "valueforge/fundamentals.py"
+      - "valueforge/identity.py"
+      - "valueforge/market_data.py"
+      - "valueforge/pdf_extract.py"
       - "valueforge/research.py"
+      - "valueforge/scoring.py"
+      - "valueforge/sector_models.py"
+      - "valueforge/universe.py"
+      - "valueforge/valuation.py"
+      - "valueforge/xbrl_extract.py"
   schedule:
     # 21:15 IST weekdays, after TejHQ's usual EOD data publication window.
     - cron: "45 15 * * 1-5"
@@ -46,12 +62,21 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Discover, download and normalize NSE/BSE XBRL financial filings
-        continue-on-error: true
+        shell: bash
         run: |
-          python -m valueforge.cli sync-filings \
-            --lookback-days "$VALUEFORGE_FILINGS_LOOKBACK_DAYS" \
-            --limit "$VALUEFORGE_FILINGS_LIMIT" \
-            --workers 4
+          for attempt in 1 2 3; do
+            echo "Filing sync attempt $attempt/3"
+            if python -m valueforge.cli sync-filings \
+              --lookback-days "$VALUEFORGE_FILINGS_LOOKBACK_DAYS" \
+              --limit "$VALUEFORGE_FILINGS_LIMIT" \
+              --workers 4; then
+              exit 0
+            fi
+            echo "Filing sync attempt $attempt failed; the queue remains resumable."
+            if [ "$attempt" -lt 3 ]; then sleep $((attempt * 20)); fi
+          done
+          echo "Filing sync had retryable source/fetch failures; preserving its queue and continuing to market scan."
+          exit 0
       - name: Refresh EOD universe and run fundamentals-backed research scan
         shell: bash
         run: |
