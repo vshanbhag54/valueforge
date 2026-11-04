@@ -92,6 +92,7 @@ create table if not exists valueforge.financial_statements (
     taxonomy_family text,
     data_quality_status text,
     statement_completeness_pct numeric,
+    parser_version integer,
     metrics jsonb not null default '{}'::jsonb,
     fact_provenance jsonb not null default '{}'::jsonb,
     ingested_at timestamptz not null default now()
