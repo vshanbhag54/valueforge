@@ -7,6 +7,7 @@ from pathlib import Path
 from .market_data import download_latest_market_data,save_market_snapshot
 from .research import run_daily_scan
 from .filings import sync_xbrl_filings
+from .universe import fetch_security_master, save_security_master
 
 
 def main():
@@ -23,6 +24,12 @@ def main():
     if args.command in ("refresh","refresh-and-scan"):
         frame,status=download_latest_market_data()
         save_market_snapshot(frame,status)
+        try:
+            master,master_status=fetch_security_master()
+            save_security_master(master,master_status)
+            print(f"Loaded {len(master):,} listed equity securities: {master_status['coverage']}")
+        except Exception as exc:
+            print(f"WARNING: security master refresh failed; using traded EOD universe only: {type(exc).__name__}: {exc}")
         print(f"Downloaded {len(frame):,} EOD rows. Dates: {status['exchange_dates']}")
     if args.command in ("scan","refresh-and-scan"):
         ranked,summary=run_daily_scan()
