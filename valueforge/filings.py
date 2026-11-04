@@ -13,7 +13,7 @@ QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
 BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
-PARSER_VERSION = "9"
+PARSER_VERSION = "10"
 INITIAL_BACKFILL_DAYS = 2555
 
 
@@ -269,6 +269,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
                 "isin": record.isin,
                 "exchange": _exchange(record),
                 "period_end": record.period_to,
+                "period_from": record.period_from,
                 "relating_to": record.relating_to,
                 "filing_ts": record.filing_ts.isoformat() if record.filing_ts else None,
                 "xbrl_url": record.xbrl_url,
