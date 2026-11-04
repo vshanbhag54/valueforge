@@ -1,5 +1,6 @@
 from __future__ import annotations
-import re, math
+import math
+import re
 import pandas as pd
 
 ALIASES={
@@ -8,7 +9,8 @@ ALIASES={
 "exchange":["exchange","market"],"sector":["sector","industry"],
 "period_end":["period end","period_end","financial year end","reporting date"],
 "basis":["basis","reporting basis","consolidated/standalone"],
-"data_as_of":["data as of","data_as_of","export date"],"source_url":["source url","source_url","source","url"],
+"data_as_of":["data as of","data_as_of","export date","filed at"],
+"source_url":["source url","source_url","source","url"],
 "pe":["p/e","pe","stock p/e","price to earnings"],"pb":["p/b","pb","price to book value","price/book"],
 "market_cap_cr":["market cap","market cap rs.cr.","mar cap rs.cr.","market capitalization"],
 "roe":["roe","roe %","return on equity","return on equity %"],"roce":["roce","roce %","return on capital employed","return on capital employed %"],
@@ -25,18 +27,32 @@ ALIASES={
 "equity":["equity","shareholders funds","total equity"],"ocf":["operating cash flow","cash from operations","cash flow from operating activities"],
 "fcf":["free cash flow","fcf"],"auditor_qualification":["auditor qualification","auditor opinion","audit opinion"],
 "related_party_flags":["related party flags","related party transactions","related party concerns"],
-"contingent_liabilities":["contingent liabilities","contingent liability"]
+"contingent_liabilities":["contingent liabilities","contingent liability"],
+"basic_eps":["basic eps","eps basic","earnings per share basic"],
+"paid_up_capital":["paid up capital","paid up equity share capital"],"face_value":["face value","face value per share"],
+"assets":["assets","total assets"],"profit_before_tax":["profit before tax","pbt"],
+"finance_cost":["finance cost","finance costs"],"operating_profit":["operating profit"],
+"period_kind":["period kind"],"period_days":["period days"],"audited":["audited"],
+"filing_id":["filing id"],"filing_key":["filing key"],"taxonomy_family":["taxonomy family"],
+"fact_count":["fact count"],"context_count":["context count"],"source_label":["source label"],
+"imported_at_utc":["imported at utc"],"unit_currency_note":["unit currency note"]
 }
-NUMERIC={k for k in ALIASES if k not in {"symbol","isin","name","exchange","sector","period_end","basis","data_as_of","source_url","auditor_qualification","related_party_flags","contingent_liabilities"}}
+NUMERIC={
+"pe","pb","market_cap_cr","roe","roce","debt_to_equity","interest_coverage","operating_margin",
+"ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct",
+"net_profit","sales","total_debt","cash","equity","ocf","fcf","basic_eps","paid_up_capital",
+"face_value","assets","profit_before_tax","finance_cost","operating_profit","period_days","fact_count","context_count"
+}
 
-def _key(v): return re.sub(r"[^a-z0-9]+"," ",str(v).lower()).strip()
+def _key(value):
+    return re.sub(r"[^a-z0-9]+"," ",str(value).lower()).strip()
 
-def parse_number(v):
-    if v is None or (isinstance(v,float) and math.isnan(v)): return float("nan")
-    if isinstance(v,(int,float)): return float(v)
-    s=str(v).strip().replace(",","").replace("₹","").replace("%","")
+def parse_number(value):
+    if value is None or (isinstance(value,float) and math.isnan(value)): return float("nan")
+    if isinstance(value,(int,float)): return float(value)
+    s=str(value).strip().replace(",","").replace("₹","").replace("%","")
     s=re.sub(r"(?i)\b(rs\.?|cr\.?|crores?|x)\b","",s).strip()
-    if s.upper() in {"","-","—","NA","N/A","NM"}: return float("nan")
+    if s.upper() in {"","-","—","NA","N/A","NM","NONE"}: return float("nan")
     neg=s.startswith("(") and s.endswith(")")
     try:
         x=float(s.strip("() "))
@@ -48,10 +64,16 @@ def _clean_identifier(series):
     return result.mask(result.isin(["","NAN","NONE","<NA>"]))
 
 def normalize_fundamentals(frame,source_label="User-uploaded Screener/export"):
-    raw=frame.copy(); lookup={_key(c):c for c in raw.columns}; out=pd.DataFrame(index=raw.index)
+    raw=frame.copy()
+    lookup={_key(c):c for c in raw.columns}
+    out=pd.DataFrame(index=raw.index)
     for target,aliases in ALIASES.items():
         col=next((lookup[_key(a)] for a in aliases if _key(a) in lookup),None)
         if col is not None: out[target]=raw[col]
+    # Keep provider-specific columns and filing metadata for auditability.
+    for col in raw.columns:
+        if col not in out.columns:
+            out[col]=raw[col]
     for field in NUMERIC:
         if field in out: out[field]=out[field].map(parse_number)
     for field in ("symbol","isin","exchange"):
@@ -59,16 +81,28 @@ def normalize_fundamentals(frame,source_label="User-uploaded Screener/export"):
     if "exchange" not in out: out["exchange"]="UNKNOWN"
     if "basis" not in out: out["basis"]="unknown"
     if "source_url" not in out: out["source_url"]=pd.NA
-    if "period_end" in out: out["period_end"]=pd.to_datetime(out["period_end"],errors="coerce").dt.strftime("%Y-%m-%d")
-    out["source_label"]=source_label
+    if "period_end" in out:
+        out["period_end"]=pd.to_datetime(out["period_end"],errors="coerce").dt.strftime("%Y-%m-%d")
+    out["source_label"]=out.get("source_label",source_label)
     out["imported_at_utc"]=pd.Timestamp.now(tz="UTC").isoformat()
     return out.reset_index(drop=True)
 
 def latest_fundamentals(frame):
     if frame.empty: return frame
     df=frame.copy()
-    if "period_end" in df:
-        df["_period"]=pd.to_datetime(df["period_end"],errors="coerce")
-        key="isin" if "isin" in df and df["isin"].notna().any() else "symbol"
-        df=df.sort_values("_period").drop_duplicates(key,keep="last").drop(columns="_period")
-    return df
+    df["_period"]=pd.to_datetime(df.get("period_end"),errors="coerce")
+    if "isin" not in df: df["isin"]=pd.NA
+    if "symbol" not in df: df["symbol"]=pd.NA
+    if "exchange" not in df: df["exchange"]="UNKNOWN"
+    df["_company_key"]=df["isin"].astype("string")
+    fallback=df["exchange"].astype("string").fillna("UNKNOWN")+":"+df["symbol"].astype("string").fillna("UNKNOWN")
+    df["_company_key"]=df["_company_key"].where(df["_company_key"].notna() & (df["_company_key"]!=""),fallback)
+    asof=pd.to_datetime(df.get("data_as_of",df.get("imported_at_utc")),errors="coerce")
+    df["_asof"]=asof
+    basis=df.get("basis",pd.Series("unknown",index=df.index)).astype("string").str.lower()
+    df["_basis_priority"]=basis.map({"consolidated":2,"standalone":1}).fillna(0)
+    label=df.get("source_label",pd.Series("",index=df.index)).astype("string").str.lower()
+    df["_source_priority"]=label.map(lambda x: 2 if "screener" in x or "manual" in x or "user" in x else 1)
+    df=df.sort_values(["_company_key","_period","_basis_priority","_asof","_source_priority"],ascending=[True,False,False,False,False],na_position="last")
+    df=df.drop_duplicates("_company_key",keep="first")
+    return df.drop(columns=["_period","_company_key","_asof","_basis_priority","_source_priority"],errors="ignore").reset_index(drop=True)
