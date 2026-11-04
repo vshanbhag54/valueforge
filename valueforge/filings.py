@@ -47,7 +47,12 @@ def _registry_keys(registry):
         return set()
     current = registry
     if "parser_version" in current:
-        current = current[current["parser_version"].astype(str) == PARSER_VERSION]
+        # CSV inference can represent integer parser versions as floats
+        # (for example 8.0); compare numerically so processed rows are not
+        # re-queued forever after a run.
+        expected_version = pd.to_numeric(PARSER_VERSION, errors="coerce")
+        versions = pd.to_numeric(current["parser_version"], errors="coerce")
+        current = current[versions == expected_version]
     else:
         current = current.iloc[0:0]
     if "parse_status" in current:
