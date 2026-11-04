@@ -32,11 +32,12 @@ def test_context_selection_prefers_fullest_statement_fact_set():
 
 def test_registry_keys_accept_numeric_csv_parser_versions():
     import pandas as pd
-    from valueforge.filings import _registry_keys
+    from valueforge.filings import _registry_keys, PARSER_VERSION
 
+    current = int(PARSER_VERSION)
     registry = pd.DataFrame({
         "filing_key": ["A|1", "B|2", "C|3", "D|4"],
-        "parser_version": [9.0, "9", 3.0, None],
+        "parser_version": [float(current), str(current), 3.0, None],
         "parse_status": ["PARSED", "PARSE_FAILED: unsupported context", "PARSED", "PARSED"],
     })
     assert _registry_keys(registry) == {"A|1", "B|2"}
