@@ -13,8 +13,8 @@ QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
 BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
-PARSER_VERSION = "7"
-INITIAL_BACKFILL_DAYS = 1825
+PARSER_VERSION = "8"
+INITIAL_BACKFILL_DAYS = 2555
 
 
 def _strict_flag(value):
@@ -102,7 +102,16 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     nse_discovery._record_from_row = strict_record_from_row
 
     today = today or date.today()
-    bootstrap = not BACKFILL_STATE_PATH.exists()
+    previous_backfill = {}
+    if BACKFILL_STATE_PATH.exists():
+        try:
+            previous_backfill = json.loads(BACKFILL_STATE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            previous_backfill = {}
+    previous_lookback = int(previous_backfill.get("lookback_days", 0) or 0)
+    # Five full CAGR intervals need six annual statements. Extend an earlier
+    # five-year bootstrap to seven years so six consecutive annual filings fit.
+    bootstrap = previous_lookback < INITIAL_BACKFILL_DAYS
     effective_lookback = max(int(lookback_days), INITIAL_BACKFILL_DAYS) if bootstrap else max(1, int(lookback_days))
     start = today - timedelta(days=effective_lookback)
     root = Path("data/filings")
@@ -155,7 +164,8 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     if bootstrap and "nse" not in discovery_errors:
         BACKFILL_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
         BACKFILL_STATE_PATH.write_text(json.dumps({
-            "started_at_utc": datetime.now(timezone.utc).isoformat(),
+            "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "previous_lookback_days": previous_lookback,
             "lookback_days": effective_lookback,
             "nse_discovered": discovery_counts["nse"],
             "xbrl_queue_total_after_discovery": len(queue.records),
@@ -192,6 +202,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     }
 
     if not batch:
+        status["pending_after_batch"] = len(pending)
         status["state"] = "NO_PENDING_FILINGS" if not pending else "BATCH_LIMIT_ZERO"
         Path("data/live/filings_status.json").parent.mkdir(parents=True, exist_ok=True)
         Path("data/live/filings_status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
