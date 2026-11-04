@@ -26,3 +26,16 @@ Optional Gemini API support runs four specialist analyses (financial quality, va
 See docs/OPERATIONS.md for deployment, workflows and data limitations.
 
 **Research software only. No broker actions. Scores are triage signals, not investment advice.**
+
+
+## Persistent PostgreSQL store (optional)
+
+The repository includes a private PostgreSQL schema and an optional adapter for storing exchange securities, EOD prices, filings, normalized financial statements, research runs and research results. Local CSV checkpoints remain available when a database is not configured.
+
+To enable it:
+1. Provision a PostgreSQL database (Supabase Postgres is supported).
+2. Run the complete `database/schema.sql` once in the database SQL editor. Keep the `valueforge` schema private; do not expose it through the Data API.
+3. Add `VALUEFORGE_DATABASE_URL` as a GitHub Actions repository secret. Use a TLS connection string (for Supabase, use the database connection string with SSL enabled). Never commit credentials.
+4. Trigger **ValueForge daily market refresh and research** from the Actions tab. The status JSON will report `database.status=CONNECTED` or an explicit error.
+
+The adapter is optional: without the secret, daily research continues with local checkpoints and reports `NOT_CONFIGURED`. The database is not provisioned by this repository; run the SQL only after you have chosen and created a database project.
