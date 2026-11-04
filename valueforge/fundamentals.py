@@ -96,6 +96,9 @@ def latest_fundamentals(frame):
     if "exchange" not in df: df["exchange"]="UNKNOWN"
     df["_company_key"]=df["isin"].astype("string")
     fallback=df["exchange"].astype("string").fillna("UNKNOWN")+":"+df["symbol"].astype("string").fillna("UNKNOWN")
+    if "security_code" in df:
+        code=df["security_code"].astype("string")
+        fallback=fallback.where(code.isna() | (code==""),df["exchange"].astype("string").fillna("UNKNOWN")+":CODE:"+code)
     df["_company_key"]=df["_company_key"].where(df["_company_key"].notna() & (df["_company_key"]!=""),fallback)
     asof=pd.to_datetime(df.get("data_as_of",df.get("imported_at_utc")),errors="coerce")
     df["_asof"]=asof
