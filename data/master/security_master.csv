@@ -1,6 +1,6 @@
 symbol,name,exchange,isin,series,security_code,face_value,paid_up_value_per_share,security_status,master_source,sector,master_as_of,has_isin
 20MICRONS,20 Microns Limited,NSE,INE144J01027,EQ,,5.0,5,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
-21STCENMGM,21st Century Management Services Limited,NSE,INE253B01015,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
+21STCENMGM,21st Century Management Services Limited,NSE,INE253B01015,BE,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 360ONE,360 ONE WAM LIMITED,NSE,INE466L01038,EQ,,1.0,1,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 3BBLACKBIO,3B Blackbio Dx Limited,NSE,INE994E01018,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 3IINFOLTD,3i Infotech Limited,NSE,INE748C01038,BE,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
@@ -277,6 +277,7 @@ AZAD,Azad Engineering Limited,NSE,INE02IJ01035,EQ,,2.0,2,Available for equity se
 AZADIND,Azad India Mobility Limited,NSE,INE566M01025,EQ,,2.0,2,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BAFNAPH,Bafna Pharmaceuticals Limited,NSE,INE878I01022,BE,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BAGFILMS,B.A.G Films and Media Limited,NSE,INE116D01028,EQ,,2.0,2,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
+BAHETI,Baheti Recycling Industries Limited,NSE,INE029Q01017,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BAIDFIN,Baid Finserv Limited,NSE,INE020D01022,EQ,,2.0,2,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BAJAJ-AUTO,Bajaj Auto Limited,NSE,INE917I01010,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BAJAJCON,Bajaj Consumer Care Limited,NSE,INE933K01021,EQ,,1.0,1,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
@@ -323,6 +324,7 @@ BCG,Brightcom Group Limited,NSE,INE425B01027,EQ,,2.0,2,Available for equity segm
 BCLIND,Bcl Industries Limited,NSE,INE412G01024,EQ,,1.0,1,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BCONCEPTS,Brand Concepts Limited,NSE,INE977Y01011,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BCPL,BCPL Railway Infrastructure Limited,NSE,INE00SW01015,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
+BCSSL,Bombay Coated and Special Steels Limited,NSE,INE0XFY01011,BE,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BDL,Bharat Dynamics Limited,NSE,INE171Z01026,EQ,,5.0,5,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BEARDSELL,Beardsell Limited,NSE,INE520H01022,EQ,,2.0,2,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BECTORFOOD,Mrs. Bectors Food Specialities Limited,NSE,INE495P01020,EQ,,2.0,2,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
@@ -409,6 +411,7 @@ BRAHMINFRA,Brahmaputra Infrastructure Limited,NSE,INE320I01017,EQ,,10.0,10,Avail
 BRIGADE,Brigade Enterprises Limited,NSE,INE791I01019,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BRIGHOTEL,Brigade Hotel Ventures Limited,NSE,INE03NU01014,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BRIGHTBR,Bright Brothers Limited,NSE,INE630D01010,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
+BRIGHTOUTD,Bright Outdoor Media Limited,NSE,INE0OMI01019,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BRITANNIA,Britannia Industries Limited,NSE,INE216A01030,EQ,,1.0,1,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BRNL,Bharat Road Network Limited,NSE,INE727S01012,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 BROOKS,Brooks Laboratories Limited,NSE,INE650L01011,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
@@ -844,7 +847,7 @@ GMRAIRPORT,GMR AIRPORTS LIMITED,NSE,INE776C01039,EQ,,1.0,1,Available for equity 
 GMRP&UI,GMR Power and Urban Infra Limited,NSE,INE0CU601026,EQ,,5.0,5,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 GNA,GNA Axles Limited,NSE,INE934S01014,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 GNFC,Gujarat Narmada Valley Fertilizers and Chemicals Limited,NSE,INE113A01013,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
-GNRL,Gujarat Natural Resources Limited,NSE,INE207H01018,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
+GNRL,Gujarat Natural Resources Limited,NSE,INE207H01026,EQ,,1.0,1,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 GOACARBON,Goa Carbon Limited,NSE,INE426D01013,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 GOCLCORP,GOCL Corporation Limited,NSE,INE077F01035,EQ,,2.0,2,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
 GOCOLORS,Go Fashion (India) Limited,NSE,INE0BJS01011,EQ,,10.0,10,Available for equity segment,https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv,,2026-11-04,True
