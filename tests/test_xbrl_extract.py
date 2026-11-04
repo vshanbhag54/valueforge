@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 
 from valueforge.xbrl_extract import extract_filing_fundamentals
 
@@ -67,3 +68,34 @@ def test_unlabelled_filing_can_select_discrete_quarter():
         "xbrl_url":"https://example.com/demo.xml"
     })
     assert row["period_kind"]=="quarter"
+
+
+def test_legacy_bse_fin_taxonomy_is_parsed_and_one_d_quarter_beats_four_d_ytd():
+    fixture=Path("tests/fixtures/in-bse-fin/sample_legacy_2021.xml").read_bytes()
+    row=extract_filing_fundamentals(fixture, {
+        "symbol":"RELIANCE","company":"Reliance Industries","exchange":"BSE",
+        "period_end":"2021-03-31","relating_to":"Financial Results",
+        "consolidated":True,"audited":True,"xbrl_url":"https://example.com/legacy.xml",
+    })
+    assert row["taxonomy_family"]=="in-bse-fin"
+    assert row["isin"]=="INE002A08JTW"
+    assert row["period_kind"]=="quarter"
+    assert row["flow_context_id"]=="OneD"
+    assert row["sales"]==2512.5
+    assert row["net_profit"]==360.1
+    assert row["profit_before_tax"]==483.0
+    assert row["other_income"]==41.2
+    assert row["paid_up_capital"]==934.219573
+    assert row["data_quality_status"]=="PARTIAL_STATEMENTS"
+
+
+def test_period_context_can_differ_by_a_few_days_without_using_wrong_period():
+    xml=XML.replace(b"2025-06-30</xbrli:endDate>",b"2025-07-01</xbrli:endDate>",1)
+    xml=xml.replace(b"2025-06-30</xbrli:instant>",b"2025-07-01</xbrli:instant>",1)
+    row=extract_filing_fundamentals(xml, {
+        "symbol":"DEMO","period_end":"2025-06-30","relating_to":"First Quarter",
+        "consolidated":True,"xbrl_url":"https://example.com/demo.xml",
+    })
+    assert row["period_end"]=="2025-07-01"
+    assert row["period_end_gap_days"]==1
+    assert row["instant_date_gap_days"]==1
