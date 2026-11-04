@@ -232,6 +232,22 @@ with tab4:
         st.dataframe(fundamentals, use_container_width=True, hide_index=True)
         st.download_button("Download normalized fundamentals CSV", fundamentals.to_csv(index=False).encode(), "company_fundamentals_normalized.csv", "text/csv")
         st.info("Session uploads are not persistent. Commit the normalized rows to data/fundamentals/company_fundamentals.csv in GitHub to use them in daily scheduled scans.")
+    st.subheader("Persistent research database")
+    try:
+        from valueforge.db import database_overview, load_latest_database_research
+        db_overview=database_overview()
+    except Exception as exc:
+        db_overview={"status":"ERROR","error":f"{type(exc).__name__}: {exc}"}
+    st.json(db_overview)
+    if db_overview.get("status")=="CONNECTED":
+        try:
+            history=load_latest_database_research(limit=100)
+            if not history.empty:
+                st.caption("Latest persisted research results")
+                show=[c for c in ["exchange","symbol","close","value_score","research_status","financial_quality_status","valuation_status","margin_of_safety_pct","fair_value_base"] if c in history]
+                st.dataframe(history[show],use_container_width=True,hide_index=True)
+        except Exception as exc:
+            st.warning(f"Could not read persisted research history: {type(exc).__name__}: {exc}")
     st.markdown("**Feed limitations**")
     st.write(market_status.get("coverage_note", "No coverage note supplied."))
     st.write("TejHQ is a third-party processed EOD bhavcopy dataset. Verify symbol coverage, corporate actions and source values before use.")
