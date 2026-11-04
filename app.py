@@ -17,6 +17,7 @@ from valueforge.scoring import screen_universe
 st.set_page_config(page_title="ValueForge | Indian Value Research", page_icon="📈", layout="wide")
 st.title("ValueForge")
 st.caption("Indian equity research desk · NSE + BSE · Value investing · Research only")
+st.caption(f"Build: {os.getenv('VALUEFORGE_BUILD_REV', 'source checkout')}")
 
 def read_json(path: str) -> dict:
     try:
