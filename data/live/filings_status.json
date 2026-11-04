@@ -1,0 +1,29 @@
+{
+  "run_at_utc": "2026-11-04T09:16:47.419118+00:00",
+  "lookback_days": 45,
+  "batch_limit": 60,
+  "discovery": {
+    "nse": 21,
+    "bse_integrated": 27,
+    "usable_xbrl": 18,
+    "new_queue_records": 18
+  },
+  "discovery_errors": {},
+  "queue_total": 18,
+  "pending_before_batch": 18,
+  "batch_selected": 18,
+  "downloaded": 15,
+  "parsed": 13,
+  "parse_failed": 2,
+  "fetch_failed": 3,
+  "fetch_stats": {
+    "total": 18,
+    "downloaded": 15,
+    "skipped_already_ok": 0,
+    "no_xbrl_link": 0,
+    "skipped_standalone": 0,
+    "failed": 3
+  },
+  "pending_after_batch": 0,
+  "state": "COMPLETED"
+}
