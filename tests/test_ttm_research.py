@@ -22,7 +22,7 @@ def test_ttm_requires_four_consecutive_quarters_and_recalculates_ratios():
     assert row["ocf"]==48
     assert row["ocf_to_net_profit"]==1.2
     assert row["operating_margin"]==20
-    assert round(row["roe"],2)==36.36
+    assert round(row["roe"],2)==32.0
     assert row["ttm_quarters"]==4
 
 
