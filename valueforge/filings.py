@@ -13,7 +13,7 @@ QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
 BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
-PARSER_VERSION = "5"
+PARSER_VERSION = "6"
 INITIAL_BACKFILL_DAYS = 1825
 
 
@@ -51,7 +51,11 @@ def _registry_keys(registry):
     else:
         current = current.iloc[0:0]
     if "parse_status" in current:
-        current = current[current["parse_status"].astype(str) == "PARSED"]
+        # A parse failure is terminal for this parser version; retrying the
+        # identical XML with identical mappings every day would starve the
+        # historical backfill queue. A parser-version bump reopens it.
+        current = current[current["parse_status"].astype(str).isin(["PARSED"]) |
+                          current["parse_status"].astype(str).str.startswith("PARSE_FAILED", na=False)]
     return set(current["filing_key"].dropna().astype(str))
 
 
