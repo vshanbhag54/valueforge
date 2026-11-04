@@ -1,14 +1,14 @@
 {
-  "run_at_utc": "2026-11-04T10:36:01.043464+00:00",
+  "run_at_utc": "2026-11-04T10:43:25.110177+00:00",
   "lookback_days": 45,
-  "effective_lookback_days": 2555,
-  "initial_backfill": true,
+  "effective_lookback_days": 45,
+  "initial_backfill": false,
   "batch_limit": 180,
   "discovery": {
-    "nse": 70059,
-    "bse_integrated": 55,
-    "usable_xbrl": 29237,
-    "new_queue_records": 10148
+    "nse": 121,
+    "bse_integrated": 58,
+    "usable_xbrl": 53,
+    "new_queue_records": 0
   },
   "discovery_errors": {},
   "queue_total": 29615,

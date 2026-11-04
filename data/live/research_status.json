@@ -1,28 +1,54 @@
 {
-  "scan_at_utc": "2026-11-04T09:34:48.540872+00:00",
-  "market_rows": 5667,
-  "fundamental_rows": 160,
+  "scan_at_utc": "2026-11-04T10:47:58.210242+00:00",
+  "market_rows": 7758,
+  "listed_security_master_rows": 7758,
+  "security_master_status": {
+    "retrieved_at_utc": "2026-11-04T10:47:55.919511+00:00",
+    "master_as_of": "2026-11-04",
+    "sources": {
+      "NSE": {
+        "status": "OK",
+        "rows": 2627,
+        "source": "https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv"
+      },
+      "BSE": {
+        "status": "OK",
+        "rows": 5131,
+        "source": "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w"
+      }
+    },
+    "exchange_sources_ok": [
+      "NSE",
+      "BSE"
+    ],
+    "rows": 7758,
+    "unique_isins": 5257,
+    "coverage": "COMBINED_NSE_BSE",
+    "coverage_note": "Exchange-provided equity security master, not a promise of every historical/delisted instrument. Suspended listings remain listed only if the exchange includes them in its source."
+  },
+  "eod_price_available": 5311,
+  "fundamental_rows": 251,
   "matched_rows": 6,
   "market_date": "2026-11-03",
   "filings_status": {
-    "run_at_utc": "2026-11-04T09:30:16.337278+00:00",
+    "run_at_utc": "2026-11-04T10:43:25.110177+00:00",
     "lookback_days": 45,
     "effective_lookback_days": 45,
     "initial_backfill": false,
     "batch_limit": 180,
     "discovery": {
-      "nse": 41,
-      "bse_integrated": 32,
-      "usable_xbrl": 16,
-      "new_queue_records": 1
+      "nse": 121,
+      "bse_integrated": 58,
+      "usable_xbrl": 53,
+      "new_queue_records": 0
     },
     "discovery_errors": {},
-    "queue_total": 19467,
-    "pending_before_batch": 19467,
+    "queue_total": 29615,
+    "pending_before_batch": 29615,
     "batch_selected": 180,
     "downloaded": 180,
-    "parsed": 89,
-    "parse_failed": 91,
+    "parsed": 91,
+    "parse_failed": 89,
     "fetch_failed": 0,
     "fetch_stats": {
       "total": 180,
@@ -32,16 +58,18 @@
       "skipped_standalone": 0,
       "failed": 0
     },
-    "pending_after_batch": 19467,
+    "pending_after_batch": 29615,
     "state": "COMPLETED_WITH_ERRORS"
   },
-  "total": 5667,
+  "total": 7758,
   "research_candidates": 0,
   "watchlist": 0,
-  "fundamentals_incomplete": 5667,
-  "price_only": 5667,
+  "fundamentals_incomplete": 5009,
+  "price_only": 7758,
   "by_status": {
-    "FUNDAMENTALS_INCOMPLETE": 5667
+    "FUNDAMENTALS_INCOMPLETE": 5009,
+    "PRICE_UNAVAILABLE": 2447,
+    "SECTOR_MODEL_REQUIRED": 302
   },
   "ai_research": {
     "status": "NOT_CONFIGURED",
