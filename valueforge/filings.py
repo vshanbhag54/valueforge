@@ -11,6 +11,7 @@ import pandas as pd
 QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
+PARSER_VERSION = "2"
 
 
 def _key(record):
@@ -24,7 +25,12 @@ def _exchange(record):
 def _registry_keys(registry):
     if registry.empty or "filing_key" not in registry:
         return set()
-    return set(registry["filing_key"].dropna().astype(str))
+    current = registry
+    if "parser_version" in current:
+        current = current[current["parser_version"].astype(str) == PARSER_VERSION]
+    else:
+        current = current.iloc[0:0]
+    return set(current["filing_key"].dropna().astype(str))
 
 
 def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
@@ -181,6 +187,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
                 "consolidated": record.consolidated, "audited": record.audited,
                 "xbrl_url": record.xbrl_url, "parse_status": "PARSED",
                 "fact_count": normalized.get("fact_count", 0),
+                "parser_version": PARSER_VERSION,
             })
             status["parsed"] += 1
         except Exception as exc:
@@ -193,7 +200,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
                 "filing_ts": record.filing_ts.isoformat() if record.filing_ts else None,
                 "consolidated": record.consolidated, "audited": record.audited,
                 "xbrl_url": record.xbrl_url, "parse_status": f"PARSE_FAILED: {type(exc).__name__}: {exc}",
-                "fact_count": 0,
+                "fact_count": 0, "parser_version": PARSER_VERSION,
             })
 
     if extracted:
@@ -212,8 +219,16 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
 
     # Temporary XBRL payloads are deliberately not retained in Git.
     shutil.rmtree(cache_dir, ignore_errors=True)
-    status["pending_after_batch"] = max(0, len(pending) - len(batch))
-    status["state"] = "COMPLETED" if not discovery_errors else "COMPLETED_WITH_SOURCE_ERRORS"
+    current_processed = _registry_keys(pd.read_csv(REGISTRY_PATH)) if REGISTRY_PATH.exists() else set()
+    status["pending_after_batch"] = sum(
+        1 for record in queue.records
+        if record.xbrl_url and record.consolidated
+        and f"{record.symbol}|{record.filing_id or record.xbrl_url}" not in current_processed
+    )
+    has_errors = bool(discovery_errors or status["fetch_failed"] or status["parse_failed"])
+    status["state"] = (
+        "COMPLETED_WITH_ERRORS" if has_errors else "COMPLETED"
+    )
     Path("data/live/filings_status.json").parent.mkdir(parents=True, exist_ok=True)
     Path("data/live/filings_status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
     return status
