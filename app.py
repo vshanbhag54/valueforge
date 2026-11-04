@@ -184,6 +184,16 @@ with tab2:
         valued=valued.sort_values("margin_of_safety_pct",ascending=False,na_position="last")
         st.dataframe(valued[valuation_cols],use_container_width=True,hide_index=True)
     st.caption("DCF assumptions: five-year FCF projection; cost of equity 12% / 14% / 16%; terminal growth 3%; forecast growth equals half the weaker verified five-year sales/profit CAGR, bounded to -5%..8%. It is a screening proxy, not a formal appraisal.")
+    st.subheader("Financial-sector research queue")
+    sector_rows=df[df.get("sector_model",pd.Series(index=df.index,dtype=object)).notna()].copy()
+    if sector_rows.empty:
+        st.caption("No financial-sector listings identified in the current universe.")
+    else:
+        sector_cols=[c for c in ["exchange","symbol","name","sector_model","sector_metrics_status","sector_metrics_coverage_pct","sector_metrics_missing","sector_research_status"] if c in sector_rows]
+        sector_rows=sector_rows.sort_values(["sector_metrics_coverage_pct","symbol"],ascending=[False,True],na_position="last")
+        st.dataframe(sector_rows[sector_cols],use_container_width=True,hide_index=True)
+        st.download_button("Download financial-sector diligence queue",sector_rows[sector_cols].to_csv(index=False).encode(),"valueforge_sector_research.csv","text/csv")
+    st.caption("Banks, NBFCs, insurers, asset managers and brokers use separate evidence checklists. Complete sector metrics route to sector research review; they are not automatic buy recommendations.")
     counts = df["research_status"].value_counts().rename_axis("status").reset_index(name="companies")
     st.plotly_chart(px.bar(counts, x="status", y="companies", title="Research coverage by status"), use_container_width=True)
 
