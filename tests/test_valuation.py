@@ -11,7 +11,7 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
         "shares_outstanding_source":"Reported company share-count disclosure",
         "sales_cagr_5y":10.0,
         "profit_cagr_5y":8.0,
-        "financial_quality_status":"VALIDATED",
+        "financial_quality_status":"VALIDATED",\n        "period_kind":"TTM from 4 discrete quarters",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
     assert row["dcf_fair_value_bear"] < row["dcf_fair_value_base"]
@@ -27,7 +27,7 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
 def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
     frame=pd.DataFrame([
         {"close":100.0,"fcf":-10.0,"shares_outstanding_cr":10.0,"shares_outstanding_source":"Exchange filing",
-         "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
+         "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED","period_kind":"annual"},
         {"close":100.0,"fcf":100.0,
          "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
     ])
@@ -42,7 +42,7 @@ def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
 def test_dcf_requires_both_five_year_growth_series():
     frame=pd.DataFrame([{
         "close":100.0,"fcf":100.0,"shares_outstanding_cr":10.0,"shares_outstanding_source":"Exchange filing",
-        "sales_cagr_5y":8.0,"profit_cagr_5y":None,"financial_quality_status":"VALIDATED",
+        "sales_cagr_5y":8.0,"profit_cagr_5y":None,"financial_quality_status":"VALIDATED","period_kind":"annual",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
     assert pd.isna(row["dcf_fair_value_base"])
