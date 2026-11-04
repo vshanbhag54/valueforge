@@ -12,7 +12,7 @@ from valueforge.agents import run_ai_committee
 from valueforge.fundamentals import normalize_fundamentals
 from valueforge.market_data import download_latest_market_data, load_market_snapshot
 from valueforge.pdf_extract import extract_relevant_pdf_text
-from valueforge.research import merge_market_and_fundamentals
+from valueforge.research import fundamental_eligibility_summary, merge_market_and_fundamentals
 from valueforge.scoring import screen_universe
 from valueforge.universe import attach_market_prices, fetch_security_master, load_security_master
 
@@ -122,6 +122,10 @@ if xbrl_fundamentals_path.exists():
     except Exception as exc:
         st.warning(f"XBRL fundamentals could not be read: {exc}")
 fundamentals=pd.concat(fundamental_frames,ignore_index=True,sort=False) if fundamental_frames else pd.DataFrame()
+try:
+    eligibility_summary=fundamental_eligibility_summary(fundamentals)
+except Exception as exc:
+    eligibility_summary={"status":"ERROR","error":f"{type(exc).__name__}: {exc}"}
 
 companies = merge_market_and_fundamentals(market, fundamentals)
 result = screen_universe(companies)
@@ -142,6 +146,12 @@ provider = market_status.get("provider", "TejHQ / Hugging Face") if isinstance(m
 retrieved = market_status.get("retrieved_at_utc", "not available") if isinstance(market_status, dict) else "not available"
 st.caption(f"Market source: {provider} · Security master: {security_master_status.get('coverage','UNAVAILABLE')} · Fundamentals: {fundamentals_source} · Retrieved: {retrieved}")
 st.warning("This is end-of-day data, not intraday live pricing. A price-only record is not an investment opportunity. Scores are research triage signals, not buy/sell advice.")
+if eligibility_summary.get("status")!="ERROR":
+    st.caption(
+        f"Fundamental eligibility: {eligibility_summary.get('xbrl_company_count',0):,} XBRL companies · "
+        f"{eligibility_summary.get('eligible_xbrl_company_count',0):,} with audited annual / 4-quarter TTM records · "
+        f"{eligibility_summary.get('interim_only_company_count',0):,} interim-only."
+    )
 
 tab1,tab2,tab3,tab4 = st.tabs(["Market universe","Value opportunities","Research lab","Data health"])
 
@@ -234,6 +244,8 @@ with tab4:
     st.json(market_status)
     st.subheader("Exchange security master")
     st.json(security_master_status)
+    st.subheader("Fundamental eligibility")
+    st.json(eligibility_summary)
     st.subheader("Fundamental / filing ingestion")
     st.json(scan_status)
     st.json(read_json("data/live/filings_status.json"))
