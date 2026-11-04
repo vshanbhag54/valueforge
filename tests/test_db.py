@@ -55,3 +55,11 @@ def test_snapshot_persistence_is_a_noop_when_database_not_configured(monkeypatch
         "statements":0,
         "research_rows":0,
     }
+
+
+def test_database_reads_return_safe_empty_values_when_unconfigured(monkeypatch):
+    monkeypatch.delenv("VALUEFORGE_DATABASE_URL",raising=False)
+    monkeypatch.delenv("DATABASE_URL",raising=False)
+    assert db.database_overview()=={"status":"NOT_CONFIGURED"}
+    assert db.load_latest_database_research().empty
+    assert db.load_company_financial_history("INE002A01018").empty
