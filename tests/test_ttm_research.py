@@ -11,7 +11,7 @@ def test_ttm_requires_four_consecutive_quarters_and_recalculates_ratios():
             "symbol":"ABC","isin":"INE000A01001","exchange":"NSE","sector":"Industrials",
             "period_end":period,"period_kind":"quarter","basis":"consolidated",
             "data_as_of":period,"sales":100.0,"net_profit":10.0,
-            "profit_before_tax":14.0,"finance_cost":2.0,"operating_profit":20.0,"ocf":12.0,
+            "profit_before_tax":14.0,"finance_cost":2.0,"operating_profit":20.0,"ocf":12.0,"capex":2.0,
             "equity":100.0+i*10,"total_debt":50.0,
         })
     ttm=_ttm_xbrl_fundamentals(pd.DataFrame(rows))
@@ -20,6 +20,8 @@ def test_ttm_requires_four_consecutive_quarters_and_recalculates_ratios():
     assert row["net_profit"]==40
     assert row["sales"]==400
     assert row["ocf"]==48
+    assert row["capex"]==8
+    assert row["fcf"]==40
     assert row["ocf_to_net_profit"]==1.2
     assert row["operating_margin"]==20
     assert round(row["roe"],2)==33.33
