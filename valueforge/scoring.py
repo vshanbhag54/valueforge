@@ -72,7 +72,7 @@ def screen_universe(frame):
         qstatus=str(r.get("financial_quality_status") or "")
         if qstatus!="VALIDATED":
             if qstatus=="STALE": return "FUNDAMENTALS_STALE"
-            if qstatus=="IDENTITY_UNVERIFIED": return "IDENTITY_UNVERIFIED"
+            if qstatus in {"IDENTITY_UNVERIFIED","IDENTITY_REVIEW_REQUIRED"}: return "IDENTITY_UNVERIFIED"
             if qstatus=="MANUAL_REVIEW_REQUIRED": return "MANUAL_DATA_REVIEW"
             if qstatus=="REVIEW_REQUIRED": return "FINANCIAL_DATA_REVIEW"
             return "FUNDAMENTALS_INCOMPLETE"
