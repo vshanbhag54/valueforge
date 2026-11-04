@@ -294,6 +294,8 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "eod_price_available":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum()),
       "fundamental_rows":int(len(fundamentals)),
       "matched_rows":int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum()),
+      "fundamentals_match_pct":round(100*int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum())/max(len(merged),1),2),
+      "unpriced_listed_rows":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("NO_EOD_PRICE").sum()),
       "market_date":latest_market_snapshot_date(market),
       "filings_status":filing_status,
       **result.summary,
