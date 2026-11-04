@@ -4,7 +4,7 @@ from valueforge.research import _ttm_xbrl_fundamentals
 
 
 def test_ttm_requires_four_consecutive_quarters_and_recalculates_ratios():
-    dates=["2025-03-31","2025-06-30","2025-09-30","2025-12-31"]
+    dates=["2024-12-31","2025-03-31","2025-06-30","2025-09-30","2025-12-31"]
     rows=[]
     for i,period in enumerate(dates):
         rows.append({
@@ -22,8 +22,8 @@ def test_ttm_requires_four_consecutive_quarters_and_recalculates_ratios():
     assert row["ocf"]==48
     assert row["ocf_to_net_profit"]==1.2
     assert row["operating_margin"]==20
-    assert round(row["roe"],2)==32.0
-    assert round(row["roce"],2)==36.57
+    assert round(row["roe"],2)==33.33
+    assert round(row["roce"],2)==37.65
     assert row["ttm_quarters"]==4
 
 
