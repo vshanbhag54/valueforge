@@ -66,3 +66,34 @@ def test_latest_xbrl_uses_audited_annual_when_ttm_is_not_available():
     assert len(latest)==1
     assert latest.iloc[0]["period_kind"]=="annual"
     assert latest.iloc[0]["net_profit"]==40.0
+
+
+def test_fundamental_eligibility_summary_separates_interim_and_investable_histories():
+    from valueforge.research import fundamental_eligibility_summary
+
+    rows=[
+        {"symbol":"ABC","exchange":"NSE","isin":"INE000A01001","source_label":"Exchange XBRL filing",
+         "period_end":"2026-03-31","period_kind":"annual","basis":"consolidated","audited":True,
+         "sales":400.0,"net_profit":40.0},
+        {"symbol":"XYZ","exchange":"NSE","isin":"INE000A01002","source_label":"Exchange XBRL filing",
+         "period_end":"2026-09-30","period_kind":"quarter","basis":"consolidated","audited":False,
+         "sales":100.0,"net_profit":10.0},
+        {"symbol":"ABC","exchange":"NSE","isin":"INE000A01001","source_label":"Exchange XBRL filing",
+         "period_end":"2026-06-30","period_kind":"quarter","basis":"consolidated","audited":False,
+         "sales":110.0,"net_profit":11.0},
+    ]
+    result=fundamental_eligibility_summary(pd.DataFrame(rows))
+    assert result["xbrl_filing_rows"]==3
+    assert result["xbrl_company_count"]==2
+    assert result["audited_annual_company_count"]==1
+    assert result["ttm_company_count"]==0
+    assert result["eligible_xbrl_company_count"]==1
+    assert result["interim_only_company_count"]==1
+
+
+def test_fundamental_eligibility_summary_handles_empty_and_manual_data():
+    from valueforge.research import fundamental_eligibility_summary
+
+    assert fundamental_eligibility_summary(pd.DataFrame())["eligible_xbrl_company_count"]==0
+    manual=pd.DataFrame([{"symbol":"ABC","exchange":"NSE","source_label":"Manual Screener export"}])
+    assert fundamental_eligibility_summary(manual)["xbrl_filing_rows"]==0
