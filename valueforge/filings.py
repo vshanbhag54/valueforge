@@ -13,25 +13,37 @@ QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
 BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
-PARSER_VERSION = "8"
+PARSER_VERSION = "9"
 INITIAL_BACKFILL_DAYS = 2555
 
 
 def _strict_flag(value):
-    """Unknown result classifications are false, never silently affirmative."""
+    """Strictly classify consolidation; unknown strings never mean consolidated."""
     if isinstance(value, bool):
         return value
     if isinstance(value, (int, float)):
         return bool(value)
     token = str(value or "").strip().lower().replace("_", " ").replace("-", " ")
     token = " ".join(token.split())
-    if token in {"y", "yes", "true", "1", "consolidated", "cons", "audited", "cumulative", "cum", "ind as new"}:
-        return True
-    if token in {"n", "no", "false", "0", "standalone", "non consolidated", "unaudited", "un audited", "ind as old", ""}:
-        return False
-    if token.startswith(("non ", "un ", "standalone")):
-        return False
-    return False
+    return token in {"y", "yes", "true", "1", "consolidated", "cons", "consolidated financial results"}
+
+
+def _strict_audited(value):
+    if isinstance(value, bool): return value
+    token = " ".join(str(value or "").strip().lower().replace("_", " ").replace("-", " ").split())
+    return token in {"y", "yes", "true", "1", "audited", "audited financial results"}
+
+
+def _strict_cumulative(value):
+    if isinstance(value, bool): return value
+    token = " ".join(str(value or "").strip().lower().replace("_", " ").replace("-", " ").split())
+    return token in {"y", "yes", "true", "1", "cumulative", "cum", "year to date", "ytd"}
+
+
+def _strict_ind_as(value):
+    if isinstance(value, bool): return value
+    token = " ".join(str(value or "").strip().lower().replace("_", " ").replace("-", " ").split())
+    return token in {"ind as", "ind as new", "ind as old", "indian accounting standards", "yes", "true", "1"}
 
 
 def _key(record):
@@ -112,9 +124,9 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
             company=str(company or "").strip(),
             isin=str(isin or "").strip() or None,
             consolidated=_strict_flag(consolidated_value),
-            audited=_strict_flag(row.get("audited")),
-            cumulative=_strict_flag(row.get("cumulative")),
-            ind_as=_strict_flag(row.get("ind_as") or row.get("indAs") or row.get("accountingStandard")),
+            audited=_strict_audited(row.get("audited")),
+            cumulative=_strict_cumulative(row.get("cumulative")),
+            ind_as=_strict_ind_as(row.get("ind_as") or row.get("indAs") or row.get("accountingStandard")),
         )
     nse_discovery._as_bool = _strict_flag
     nse_discovery._record_from_row = strict_record_from_row
@@ -274,6 +286,11 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
                 "consolidated": record.consolidated, "audited": record.audited,
                 "xbrl_url": record.xbrl_url, "parse_status": "PARSED",
                 "fact_count": normalized.get("fact_count", 0),
+                "data_quality_status": normalized.get("data_quality_status"),
+                "statement_completeness_pct": normalized.get("statement_completeness_pct"),
+                "taxonomy_family": normalized.get("taxonomy_family"),
+                "flow_context_id": normalized.get("flow_context_id"),
+                "instant_context_id": normalized.get("instant_context_id"),
                 "parser_version": PARSER_VERSION,
             })
             status["parsed"] += 1
@@ -287,7 +304,8 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
                 "filing_ts": record.filing_ts.isoformat() if record.filing_ts else None,
                 "consolidated": record.consolidated, "audited": record.audited,
                 "xbrl_url": record.xbrl_url, "parse_status": f"PARSE_FAILED: {type(exc).__name__}: {exc}",
-                "fact_count": 0, "parser_version": PARSER_VERSION,
+                "fact_count": 0, "parse_error": f"{type(exc).__name__}: {exc}",
+                "parser_version": PARSER_VERSION,
             })
 
     if extracted:
