@@ -1,31 +1,33 @@
 # ValueForge
 
-Research-only, multi-agent value-investing research desk for Indian listed equities (NSE/BSE).
+Research-only Indian equity value-investing desk for NSE and BSE.
 
-> Not investment advice. No trading or broker order execution. Verify figures against primary filings before making investment decisions.
+## Live market operation
+After merge, GitHub Actions runs weekdays at 21:15 IST. It:
+1. Finds latest NSE and BSE daily partitions in the public TejHQ Indian Markets dataset.
+2. Downloads daily EOD OHLCV and joins available derived market metrics.
+3. Saves market source/freshness status and latest universe.
+4. Runs the value screener against the fundamentals available in the repository.
+5. Commits updated snapshots under data/live.
 
-## MVP
-- Streamlit dashboard for CSV imports, screening, company research and memo export.
-- Transparent deterministic value/quality score; missing values are never treated as zero.
-- Specialist research modules for financial quality, valuation, forensic accounting and industry context.
-- Data provenance fields: source URL, period end, reporting basis and data-as-of date.
-- Illustrative sample dataset clearly marked as fictitious.
+This is end-of-day data, not an intraday feed. The dataset is third-party processed exchange bhavcopy with documented coverage and reconciliation limits: https://github.com/tejhq/tej-bazaar and https://huggingface.co/datasets/tejhq/indian-markets.
 
-## Quick start (Python 3.11+)
+## Local installation (Python 3.11+)
 ```bash
 python -m venv .venv
-# Windows: .venv\Scripts\activate
+# Windows: .venv\\Scripts\\activate
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+python -m valueforge.cli refresh-and-scan
 streamlit run app.py
 ```
 
-Upload a CSV matching `data/templates/company_fundamentals.csv`. Screener.in is supported via user-exported CSV; this project does not assume an official public Screener.in API or bypass site access controls.
+## Fundamentals
+There is no official public Screener.in API integration. Use permitted Screener CSV exports or verified company/exchange filings. Upload CSV in the dashboard, normalize it, then commit the result to data/fundamentals/company_fundamentals.csv for persistent daily scans. ISIN is the preferred join key. Missing values stay missing.
 
-## Architecture
-CSV / permitted public filings -> normalized records -> validation -> deterministic screen -> specialist research roles -> committee memo -> human review.
+## AI analyst team
+Optional Gemini API support runs four specialist analyses (financial quality, valuation, forensic accounting and bear case) plus a committee synthesis for a selected company. Add GEMINI_API_KEY to Streamlit Secrets. Without a key, deterministic screening and evidence-gap memos remain available. Google says free-tier content may be used to improve products; check current terms and avoid confidential data.
 
-The included roles are auditable Python modules, not unconstrained autonomous LLM agents. LLM narrative generation may be added later, but claims must cite evidence and may not override failed validation.
+See docs/OPERATIONS.md for deployment and data limitations.
 
-## Important limitations
-Free sources alone do not guarantee complete NSE+BSE coverage or clean historical fundamentals. Financial institutions require sector-specific logic; this MVP flags missing industrial-company metrics rather than fabricating values. Screening scores are triage tools, not fair-value estimates or buy signals.
+**Research software only. No broker actions. Scores are triage signals, not investment advice.**
