@@ -10,9 +10,9 @@ GitHub Actions runs the weekday pipeline at 21:15 IST (cron 15:45 UTC):
 4. Refresh the latest NSE/BSE end-of-day price universe from TejHQ.
 5. Merge the latest reliable fundamentals, derive TTM flows only from four consecutive discrete quarters, apply the value-investing research hurdles, and publish a status report.
 
-The first successful filing sync automatically performs a one-time approximately five-year NSE discovery backfill. The persistent queue is then drained in bounded daily batches; later runs return to the configured incremental lookback. Exchange-wide listings are refreshed daily, independently of whether a security traded that day. The initial backfill marker is stored at `data/fundamentals/backfill_state.json`. Discovery and parsing progress is written to `data/live/filings_status.json`.
+The first successful filing sync automatically performs a one-time approximately seven-year NSE discovery backfill. The persistent queue is then drained in bounded daily batches; later runs return to the configured incremental lookback. Exchange-wide listings are refreshed daily, independently of whether a security traded that day. The initial backfill marker is stored at `data/fundamentals/backfill_state.json`. Discovery and parsing progress is written to `data/live/filings_status.json`.
 
-Run manually from **Actions → ValueForge daily market refresh and research → Run workflow**. The default manual discovery lookback is 1,825 days; the default batch is 180 filings. Re-run manually to drain the queue faster if GitHub Actions runtime limits permit. The normal scheduled run uses a 45-day incremental discovery window.
+Run manually from **Actions → ValueForge daily market refresh and research → Run workflow**. The default manual discovery lookback is 2,555 days; the default batch is 180 filings. Re-run manually to drain the queue faster if GitHub Actions runtime limits permit. The normal scheduled run uses a 45-day incremental discovery window.
 
 ## Market prices
 
