@@ -19,6 +19,10 @@ FLOW_ALIASES = {
     "ocf": ("CashFlowsFromUsedInOperatingActivities", "CashFlowsFromUsedInOperations", "NetCashFlowsFromUsedInOperatingActivities", "CashFlowsFromOperatingActivities"),
     "basic_eps": ("BasicEarningsLossPerShareFromContinuingOperations", "BasicEarningsPerShare", "EarningsPerShareBasic", "BasicEarningsLossPerShare"),
 }
+CAPEX_ALIASES = (
+    "PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+    "PurchaseOfIntangibleAssetsClassifiedAsInvestingActivities",
+)
 INSTANT_ALIASES = {
     "equity": ("EquityAttributableToOwnersOfParent", "Equity", "TotalEquity", "EquityIncludingNoncontrollingInterest"),
     "assets": ("Assets", "TotalAssets"),
@@ -192,6 +196,9 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
     out = {}
     for key, aliases in FLOW_ALIASES.items():
         out[key] = _lookup(flows, aliases)
+    capex_components = [_lookup(flows, (tag,)) for tag in CAPEX_ALIASES]
+    capex_components = [abs(value) for value in capex_components if value is not None]
+    out["capex"] = sum(capex_components) if capex_components else None
     for key, aliases in INSTANT_ALIASES.items():
         out[key] = _lookup(instants, aliases)
 
@@ -203,11 +210,14 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
 
     # XBRL monetary facts in the INR unit are rupees. Normalize money to crore.
     monetary = {"sales", "net_profit", "profit_before_tax", "finance_cost", "operating_profit",
-                "ocf", "equity", "assets", "cash", "total_debt", "short_debt",
+                "ocf", "capex", "equity", "assets", "cash", "total_debt", "short_debt",
                 "long_debt", "paid_up_capital"}
     for key in monetary:
         if out.get(key) is not None:
             out[key] = out[key] / 10_000_000
+
+    if out.get("ocf") is not None and out.get("capex") is not None:
+        out["fcf"] = out["ocf"] - out["capex"]
 
     prior_equity_raw = _prior_equity(summary, period_end, INSTANT_ALIASES["equity"])
     prior_equity = prior_equity_raw / 10_000_000 if prior_equity_raw is not None else None
@@ -253,7 +263,8 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
         fact.local_name for fact in summary.facts
         if any(term in fact.local_name.lower() for term in
                ("revenue", "turnover", "profit", "cashflow", "cashflows", "financecost",
-                "earningspershare", "operatingprofit", "sharecapital", "facevalue"))
+                "earningspershare", "operatingprofit", "sharecapital", "facevalue",
+                "purchaseofpropertyplant", "purchaseofintangible"))
     })
     isin = filing.get("isin") or _get_isin(xml_bytes)
     out.update({
