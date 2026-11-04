@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import os
+import hmac
 from pathlib import Path
 
 import pandas as pd
@@ -18,6 +19,29 @@ st.set_page_config(page_title="ValueForge | Indian Value Research", page_icon="�
 st.title("ValueForge")
 st.caption("Indian equity research desk · NSE + BSE · Value investing · Research only")
 st.caption(f"Build: {os.getenv('VALUEFORGE_BUILD_REV', 'source checkout')}")
+
+def require_private_access():
+    try:
+        expected=st.secrets.get("VALUEFORGE_APP_PASSWORD")
+    except Exception:
+        expected=None
+    expected=expected or os.getenv("VALUEFORGE_APP_PASSWORD")
+    if not expected:
+        st.error("ValueForge is locked. Set VALUEFORGE_APP_PASSWORD in Streamlit Secrets (or the local environment) before using this personal research dashboard.")
+        st.code('VALUEFORGE_APP_PASSWORD = "choose-a-long-unique-password"', language="toml")
+        st.stop()
+    if not st.session_state.get("valueforge_authenticated",False):
+        with st.form("valueforge_login"):
+            supplied=st.text_input("Private dashboard password",type="password")
+            submit=st.form_submit_button("Unlock ValueForge")
+        if submit and hmac.compare_digest(str(supplied),str(expected)):
+            st.session_state["valueforge_authenticated"]=True
+            st.rerun()
+        if submit:
+            st.error("Incorrect password.")
+        st.stop()
+
+require_private_access()
 
 def read_json(path: str) -> dict:
     try:
@@ -48,6 +72,7 @@ if market.empty:
 
 scan_status = read_json("data/live/research_status.json")
 fundamentals_path = Path("data/fundamentals/company_fundamentals.csv")
+xbrl_fundamentals_path = Path("data/fundamentals/xbrl_fundamentals.csv")
 try:
     configured_gemini_key = st.secrets.get("GEMINI_API_KEY")
 except Exception:
@@ -62,19 +87,25 @@ with st.sidebar:
     st.write("Gemini analysis:", "Configured" if configured_gemini_key else "Not configured")
     st.caption("Add GEMINI_API_KEY to Streamlit Secrets for on-demand specialist analysis. The key is not stored in this repository.")
 
+fundamental_frames=[]
 if uploaded is not None:
     try:
-        fundamentals = normalize_fundamentals(pd.read_csv(uploaded), source_label="Session CSV upload")
-        fundamentals_source = "Session upload (not persisted)"
+        fundamental_frames.append(normalize_fundamentals(pd.read_csv(uploaded),source_label="Manual Screener / session upload"))
+        fundamentals_source="Session Screener upload + repository XBRL history"
     except Exception as exc:
         st.error(f"Could not read the fundamentals CSV: {exc}")
         st.stop()
 elif fundamentals_path.exists():
-    fundamentals = normalize_fundamentals(pd.read_csv(fundamentals_path), source_label="Repository fundamentals")
-    fundamentals_source = "Repository fundamentals"
+    fundamental_frames.append(normalize_fundamentals(pd.read_csv(fundamentals_path),source_label="Manual Screener / repository fundamentals"))
+    fundamentals_source="Repository Screener fundamentals + XBRL history"
 else:
-    fundamentals = pd.DataFrame()
-    fundamentals_source = "Not configured"
+    fundamentals_source="Exchange XBRL history"
+if xbrl_fundamentals_path.exists():
+    try:
+        fundamental_frames.append(normalize_fundamentals(pd.read_csv(xbrl_fundamentals_path),source_label="Exchange XBRL filings"))
+    except Exception as exc:
+        st.warning(f"XBRL fundamentals could not be read: {exc}")
+fundamentals=pd.concat(fundamental_frames,ignore_index=True,sort=False) if fundamental_frames else pd.DataFrame()
 
 companies = merge_market_and_fundamentals(market, fundamentals)
 result = screen_universe(companies)
@@ -166,6 +197,7 @@ with tab4:
     st.subheader("Data freshness and integrity")
     st.json(market_status)
     st.json(scan_status)
+    st.json(read_json("data/live/filings_status.json"))
     st.write(f"Fundamentals: {len(fundamentals):,} rows · {fundamentals_source}")
     if uploaded is not None:
         st.dataframe(fundamentals, use_container_width=True, hide_index=True)
