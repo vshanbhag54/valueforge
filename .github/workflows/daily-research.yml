@@ -31,7 +31,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_MODEL: gemini-2.5-flash-lite
@@ -61,7 +61,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/live/market_status.json data/live/research_status.json data/live/filings_status.json
+          git add data/live/market_status.json data/live/research_status.json data/live/filings_status.json data/master/security_master.csv data/master/security_master_status.json
           git add data/fundamentals/xbrl_fundamentals.csv data/fundamentals/processed_filings.csv data/fundamentals/xbrl_filing_queue.jsonl data/fundamentals/backfill_state.json 2>/dev/null || true
           if [ -d data/live/reports ]; then git add data/live/reports; fi
           if git diff --cached --quiet; then
