@@ -10,7 +10,7 @@ GitHub Actions runs the weekday pipeline at 21:15 IST (cron 15:45 UTC):
 4. Refresh the latest NSE/BSE end-of-day price universe from TejHQ.
 5. Merge the latest reliable fundamentals, derive TTM flows only from four consecutive discrete quarters, apply the value-investing research hurdles, and publish a status report.
 
-The first successful filing sync automatically performs a one-time approximately five-year NSE discovery backfill. The persistent queue is then drained in bounded daily batches; later runs return to the configured incremental lookback. The initial backfill marker is stored at `data/fundamentals/backfill_state.json`. Discovery and parsing progress is written to `data/live/filings_status.json`.
+The first successful filing sync automatically performs a one-time approximately five-year NSE discovery backfill. The persistent queue is then drained in bounded daily batches; later runs return to the configured incremental lookback. Exchange-wide listings are refreshed daily, independently of whether a security traded that day. The initial backfill marker is stored at `data/fundamentals/backfill_state.json`. Discovery and parsing progress is written to `data/live/filings_status.json`.
 
 Run manually from **Actions → ValueForge daily market refresh and research → Run workflow**. The default manual discovery lookback is 1,825 days; the default batch is 180 filings. Re-run manually to drain the queue faster if GitHub Actions runtime limits permit. The normal scheduled run uses a 45-day incremental discovery window.
 
@@ -19,6 +19,10 @@ Run manually from **Actions → ValueForge daily market refresh and research →
 The EOD price universe comes from the public TejHQ `tejhq/indian-markets` Hugging Face dataset. It is end-of-day bhavcopy-derived data, not intraday live quotes. The current pipeline selects the latest published trading date independently for NSE and BSE, rejects stale data older than ten calendar days, and uses supported equity series only. It does not claim to cover every suspended, non-traded, SME or delisted security.
 
 TejHQ terms permit personal/private research but restrict redistribution of raw market data. Therefore raw market snapshots are ignored by Git and are not uploaded as public workflow artifacts. Do not publish the raw files or repurpose them commercially. Source: https://huggingface.co/datasets/tejhq/indian-markets and https://tejhq.com/terms.
+
+## Exchange-wide listed security universe
+
+Each daily run refreshes the NSE `EQUITY_L.csv` active equity master and BSE's active `ListofScripData` equity scrip list. These are stored separately under `data/master/` and joined to EOD quotes using ISIN first, then exchange symbol or BSE scrip code. A listed row remains visible when the latest EOD dataset has no quote; it is labelled `NO_EOD_PRICE` and blocked from valuation screening. This is distinct from the traded bhavcopy universe.
 
 ## Fundamental filing ingestion
 
