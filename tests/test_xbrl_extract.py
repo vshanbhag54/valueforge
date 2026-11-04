@@ -57,6 +57,8 @@ def test_extracts_quarter_and_normalizes_currency_to_crore():
     assert pd.isna(row.get("roce"))  # quarter-only PBT is not annual ROCE
     assert row["paid_up_capital"]==5
     assert row["face_value"]==10
+    assert row["capex"]==1
+    assert row["fcf"]==5
 
 
 def test_unlabelled_filing_can_select_discrete_quarter():
