@@ -20,6 +20,10 @@ def _is_missing(value):
         return str(value).strip().lower() in {"", "nan", "none", "<na>"}
 
 
+def _safe_text(value):
+    return "" if _is_missing(value) else str(value)
+
+
 def assess_financial_quality(row, as_of=None):
     """Return an auditable quality gate; missing statement facts remain unknown."""
     as_of = as_of or date.today()
@@ -32,10 +36,10 @@ def assess_financial_quality(row, as_of=None):
         age_days = (pd.Timestamp(as_of) - period.normalize()).days
         period_status = "CURRENT" if 0 <= age_days <= 450 else "STALE_OR_FUTURE"
 
-    basis = str(row.get("basis") or "").strip().lower()
-    source_url = str(row.get("source_url") or "").strip()
-    source_label = str(row.get("source_label") or "").lower()
-    match_method = str(row.get("fundamental_match_method") or "UNMATCHED")
+    basis = _safe_text(row.get("basis")).strip().lower()
+    source_url = _safe_text(row.get("source_url")).strip()
+    source_label = _safe_text(row.get("source_label")).lower()
+    match_method = _safe_text(row.get("fundamental_match_method")) or "UNMATCHED"
 
     issues = []
     if missing:
