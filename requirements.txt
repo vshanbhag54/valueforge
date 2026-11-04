@@ -8,3 +8,5 @@ huggingface_hub>=0.27,<2
 requests>=2.32,<3
 PyMuPDF>=1.24,<2
 pytest>=8,<9
+
+india-xbrl-filings==0.1.1
