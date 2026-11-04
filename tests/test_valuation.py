@@ -7,8 +7,8 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
     frame=pd.DataFrame([{
         "close":100.0,
         "fcf":1000.0,
-        "paid_up_capital":100.0,
-        "face_value":10.0,
+        "shares_outstanding_cr":10.0,
+        "shares_outstanding_source":"Reported company share-count disclosure",
         "sales_cagr_5y":10.0,
         "profit_cagr_5y":8.0,
         "financial_quality_status":"VALIDATED",
@@ -26,9 +26,9 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
 
 def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
     frame=pd.DataFrame([
-        {"close":100.0,"fcf":-10.0,"paid_up_capital":100.0,"face_value":10.0,
+        {"close":100.0,"fcf":-10.0,"shares_outstanding_cr":10.0,"shares_outstanding_source":"Exchange filing",
          "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
-        {"close":100.0,"fcf":100.0,"paid_up_capital":None,"face_value":None,
+        {"close":100.0,"fcf":100.0,
          "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
     ])
     out=apply_intrinsic_valuation(frame)
@@ -41,7 +41,7 @@ def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
 
 def test_dcf_requires_both_five_year_growth_series():
     frame=pd.DataFrame([{
-        "close":100.0,"fcf":100.0,"paid_up_capital":10.0,"face_value":1.0,
+        "close":100.0,"fcf":100.0,"shares_outstanding_cr":10.0,"shares_outstanding_source":"Exchange filing",
         "sales_cagr_5y":8.0,"profit_cagr_5y":None,"financial_quality_status":"VALIDATED",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
@@ -51,7 +51,7 @@ def test_dcf_requires_both_five_year_growth_series():
 
 def test_dcf_refuses_unvalidated_statements():
     frame=pd.DataFrame([{
-        "close":100.0,"fcf":100.0,"paid_up_capital":10.0,"face_value":1.0,
+        "close":100.0,"fcf":100.0,"shares_outstanding_cr":10.0,"shares_outstanding_source":"Exchange filing",
         "sales_cagr_5y":8.0,"profit_cagr_5y":8.0,
         "financial_quality_status":"IDENTITY_UNVERIFIED",
     }])
