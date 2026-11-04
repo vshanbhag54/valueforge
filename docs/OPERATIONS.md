@@ -78,3 +78,20 @@ This is a continuously updating research operation, but free public sources do n
 - Financial sector models, historical restatement handling, corporate-action adjustments, deeper annual-report PDF table extraction and full peer valuation remain further work.
 
 ValueForge is research software, not investment advice or a SEBI-registered advisory service. It is not an execution system.
+
+
+## Persistent PostgreSQL database (optional)
+
+The application now includes `database/schema.sql` and `valueforge/db.py`. When `VALUEFORGE_DATABASE_URL` (or `DATABASE_URL`) is configured, each successful daily scan persists the listed-security master, daily EOD prices, exchange filing metadata, normalized financial statements, a research-run summary and per-company research results.
+
+### Provisioning
+
+1. Create/select a PostgreSQL database. A Supabase Postgres project can be used; the application does not require Supabase Auth or the Data API.
+2. Run the complete `database/schema.sql` once in the database SQL editor.
+3. Keep schema `valueforge` private and unexposed via the Data API. The SQL enables RLS and revokes access from public, anon and authenticated roles; backend access is via a private database connection.
+4. Add GitHub repository secret `VALUEFORGE_DATABASE_URL` with a TLS-enabled PostgreSQL connection string. Do not put connection strings in Git.
+5. Trigger the daily workflow manually. Check `data/live/research_status.json` for `database.status`, `research_run_id` and persisted row counts.
+
+Without the secret, the database adapter returns `NOT_CONFIGURED` and the CSV-based pipeline continues. If configured but the schema is missing or unreachable, the scan records `database.status=ERROR` in its status report; it does not discard the CSV research checkpoint.
+
+The current connected Supabase account did not have a project when this integration was added, so no database has been provisioned or live connection verified yet. The SQL and Python adapter are committed; the live project, schema application and connection secret are deployment steps still required.
