@@ -51,9 +51,11 @@ def _period_target(relating_to: str | None, period_end: date | None):
         return "annual", 365, (300, 400)
     if "half" in label or "six month" in label or "6 month" in label:
         return "half_year", 183, (150, 215)
-    # For ordinary quarter filings use the discrete-quarter context (usually OneD),
-    # not the cumulative FourD year-to-date context.
-    return "quarter", 92, (65, 125)
+    if any(x in label for x in ("quarter", "q1", "q2", "q3", "q4", "three month")):
+        return "quarter", 92, (65, 125)
+    # Metadata often omits the period label. The caller then tries discrete
+    # quarter first; if absent it falls back to annual/half-year contexts.
+    return "unknown", 92, (65, 125)
 
 
 def _get_isin(xml_bytes: bytes):
