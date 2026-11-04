@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from typing import Any
 
 import pandas as pd
@@ -58,7 +59,7 @@ def _json(value: Any) -> str:
 
 def company_key(row: dict) -> str | None:
     isin = str(_scalar(row.get("isin")) or "").strip().upper()
-    if len(isin) == 12 and isin.startswith("IN"):
+    if re.fullmatch(r"IN[A-Z0-9]{10}", isin):
         return isin
     exchange = str(_scalar(row.get("exchange")) or "").strip().upper()
     code = str(_scalar(row.get("security_code")) or "").strip()
@@ -173,7 +174,7 @@ def _persist_market(cur, market):
     _company_upsert(cur, rows)
     written = 0
     for row in rows:
-        snapshot_date = _scalar(row.get("snapshot_date") or row.get("date"))
+        snapshot_date = _scalar(row.get("snapshot_date")) or _scalar(row.get("date"))
         close = _number(row.get("close"))
         exchange, symbol = _text(row.get("exchange")), _text(row.get("symbol"))
         if not snapshot_date or not exchange or not symbol or close is None:
