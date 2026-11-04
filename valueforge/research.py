@@ -164,7 +164,7 @@ def _attach_source(base,frame,override=False):
     if frame.empty: return base
     f=latest_fundamentals(frame)
     for field in f.columns:
-        if field in {"isin","symbol","name","exchange","_company_key"}: continue
+        if field in {"isin","symbol","security_code","name","exchange","_company_key"}: continue
         mapped=pd.Series(index=base.index,dtype=object)
         if "isin" in f and "isin" in base:
             part=f.dropna(subset=["isin"]).drop_duplicates("isin",keep="last")
