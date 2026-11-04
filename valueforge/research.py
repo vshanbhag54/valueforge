@@ -7,6 +7,7 @@ from .fundamentals import latest_fundamentals, normalize_fundamentals
 from .market_data import load_market_snapshot
 from .scoring import screen_universe
 from .universe import attach_market_prices, load_security_master
+from .valuation import apply_intrinsic_valuation
 
 FUNDAMENTALS_PATH=Path("data/fundamentals/company_fundamentals.csv")
 XBRL_FUNDAMENTALS_PATH=Path("data/fundamentals/xbrl_fundamentals.csv")
@@ -43,17 +44,20 @@ def _ttm_xbrl_fundamentals(history):
         return pd.DataFrame()
     df["_kind"]=df["period_kind"].astype("string").str.lower()
     df["_company_key"]=_company_key(df)
+    df["_asof"]=pd.to_datetime(df.get("data_as_of",df.get("filing_ts")),errors="coerce")
     ttm=[]
-    flow_fields=["sales","net_profit","profit_before_tax","finance_cost","operating_profit","ocf"]
+    flow_fields=["sales","net_profit","profit_before_tax","finance_cost","operating_profit","ocf","capex"]
     for _,group in df[df["_kind"].str.contains("quarter",na=False)].groupby("_company_key",dropna=False):
-        group=group.sort_values("_period").drop_duplicates("_period",keep="last")
+        # Select the latest filing revision for each quarter, not the last row
+        # encountered in the CSV.
+        group=group.sort_values(["_period","_asof"],na_position="first").drop_duplicates("_period",keep="last")
         if len(group)<4: continue
         q=group.tail(4)
         dates=q["_period"].dropna().tolist()
         if len(dates)!=4: continue
         gaps=[(dates[i]-dates[i-1]).days for i in range(1,4)]
         if any(g<60 or g>125 for g in gaps): continue
-        latest=q.iloc[-1].drop(labels=["_period","_kind","_company_key"],errors="ignore").to_dict()
+        latest=q.iloc[-1].drop(labels=["_period","_kind","_company_key","_asof"],errors="ignore").to_dict()
         for field in flow_fields:
             vals=pd.to_numeric(q.get(field,pd.Series(index=q.index,dtype=float)),errors="coerce")
             latest[field]=float(vals.sum()) if vals.notna().all() else float("nan")
@@ -64,7 +68,8 @@ def _ttm_xbrl_fundamentals(history):
         if latest.get("sales") and latest.get("sales")>0:
             if pd.notna(latest.get("operating_profit")):
                 latest["operating_margin"]=latest["operating_profit"]/latest["sales"]*100
-        profit=latest.get("net_profit"); ocf=latest.get("ocf")
+        profit=latest.get("net_profit"); ocf=latest.get("ocf"); capex=latest.get("capex")
+        latest["fcf"]=ocf-capex if pd.notna(ocf) and pd.notna(capex) else float("nan")
         if pd.notna(profit) and profit!=0 and pd.notna(ocf):
             latest["ocf_to_net_profit"]=ocf/profit
         pbt=latest.get("profit_before_tax"); finance=latest.get("finance_cost")
@@ -218,6 +223,7 @@ def merge_market_and_fundamentals(market,fundamentals):
     # exchange XBRL remains the auditable source for all other metrics.
     base=_attach_source(base,manual,override=True)
     base=_derive_market_valuation(base)
+    base=apply_intrinsic_valuation(base)
     base["fundamentals_match"]=base.get("period_end",pd.Series(index=base.index,dtype=object)).notna()
     return base
 
