@@ -1,32 +1,45 @@
 {
-  "run_at_utc": "2026-11-04T12:17:08.559739+00:00",
+  "run_at_utc": "2026-11-04T12:32:48.688076+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 381,
-    "bse_integrated": 151,
-    "usable_xbrl": 163,
-    "new_queue_records": 26
+    "nse": 221,
+    "bse_integrated": 168,
+    "usable_xbrl": 95,
+    "new_queue_records": 4
   },
   "discovery_errors": {},
-  "queue_total": 29671,
-  "pending_before_batch": 29671,
+  "queue_total": 29675,
+  "pending_before_batch": 29675,
   "batch_selected": 500,
-  "downloaded": 490,
-  "parsed": 379,
+  "downloaded": 499,
+  "parsed": 388,
   "parse_failed": 111,
-  "fetch_failed": 10,
+  "fetch_failed": 1,
   "fetch_stats": {
     "total": 500,
-    "downloaded": 490,
+    "downloaded": 499,
     "skipped_already_ok": 0,
     "no_xbrl_link": 0,
     "skipped_standalone": 0,
-    "failed": 10
+    "failed": 1
   },
   "processed_filing_keys": [
+    "NAVNETEDUL|209547",
+    "RUCHINFRA|209540",
+    "ORKLAINDIA|209534",
+    "TORNTPOWER|209523",
+    "CAPACITE|209521",
+    "LALPATHLAB|209511",
+    "HUDCO|209509",
+    "SMSPHARMA|209507",
+    "NYKAA|209502",
+    "SANATHAN|209498",
+    "VIDYAWIRES|209495",
+    "IRCON|209486",
+    "SAKSOFT|209483",
     "KICL|209465",
     "ISGEC|209464",
     "MARKSANS|209459",
@@ -512,12 +525,8 @@
     "SKFINDIA|157431",
     "CLEDUCATE|157427",
     "JSWDULUX|157423",
-    "SIGNATURE|157420",
-    "DIGISPICE|157417",
-    "ZAGGLE|157413",
-    "NLCINDIA|157411",
-    "BALAMINES|157409"
+    "SIGNATURE|157420"
   ],
-  "pending_after_batch": 29155,
+  "pending_after_batch": 29146,
   "state": "COMPLETED_WITH_ERRORS"
 }
