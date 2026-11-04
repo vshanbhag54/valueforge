@@ -87,6 +87,7 @@ def normalize_bse_equity(records):
     out["exchange"] = "BSE"
     out["isin"] = _first(df, ["isin_number", "isin", "isin_code"]).astype("string").str.strip().str.upper()
     out["series"] = _first(df, ["group", "group_name", "scrip_group", "series"]).astype("string").str.strip().str.upper()
+    out["sector"] = _first(df, ["industry", "industry_name", "sector", "industryname"]).astype("string").str.strip()
     out["security_code"] = _first(df, ["scrip_cd", "scrip_code", "security_code", "scripcode"]).astype("string").str.strip()
     face = pd.to_numeric(_first(df, ["face_value", "parval"]), errors="coerce")
     # Standard BSE EQ SCRIP master expresses face value in paise.
