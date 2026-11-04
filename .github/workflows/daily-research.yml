@@ -1,5 +1,13 @@
 name: ValueForge daily market refresh and research
 on:
+  push:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "valueforge/**"
+      - ".github/workflows/daily-research.yml"
   schedule:
     # 21:15 IST on weekdays, after the dataset's nightly EOD release.
     - cron: "45 15 * * 1-5"
