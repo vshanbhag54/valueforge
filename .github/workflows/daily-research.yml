@@ -1,13 +1,5 @@
 name: ValueForge daily market refresh and research
 on:
-  push:
-    branches: [main]
-    paths:
-      - "app.py"
-      - "requirements.txt"
-      - "pyproject.toml"
-      - "valueforge/**"
-      - ".github/workflows/daily-research.yml"
   schedule:
     # 21:15 IST weekdays, after TejHQ's usual EOD data publication window.
     - cron: "45 15 * * 1-5"
@@ -61,8 +53,18 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/live/market_status.json data/live/research_status.json data/live/filings_status.json data/master/security_master.csv data/master/security_master_status.json
-          git add data/fundamentals/xbrl_fundamentals.csv data/fundamentals/processed_filings.csv data/fundamentals/xbrl_filing_queue.jsonl data/fundamentals/backfill_state.json 2>/dev/null || true
+          for file in \
+            data/live/market_status.json \
+            data/live/research_status.json \
+            data/live/filings_status.json \
+            data/master/security_master.csv \
+            data/master/security_master_status.json \
+            data/fundamentals/xbrl_fundamentals.csv \
+            data/fundamentals/processed_filings.csv \
+            data/fundamentals/xbrl_filing_queue.jsonl \
+            data/fundamentals/backfill_state.json; do
+            if [ -f "$file" ]; then git add "$file"; fi
+          done
           if [ -d data/live/reports ]; then git add data/live/reports; fi
           if git diff --cached --quiet; then
             echo "No status, filing or report changes."
