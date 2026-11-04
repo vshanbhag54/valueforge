@@ -1,8 +1,6 @@
-import pandas as pd
-
 from valueforge.filings import _strict_flag
 from valueforge.xbrl_extract import extract_filing_fundamentals
-from tests.test_xbrl_extract import XML
+from test_xbrl_extract import XML
 
 
 def test_consolidation_classifier_rejects_unknown_and_standalone_values():
