@@ -27,7 +27,10 @@ def _company_key(frame):
     isin=frame.get("isin",pd.Series(pd.NA,index=frame.index)).astype("string")
     exchange=frame.get("exchange",pd.Series("UNKNOWN",index=frame.index)).astype("string").fillna("UNKNOWN")
     symbol=frame.get("symbol",pd.Series("UNKNOWN",index=frame.index)).astype("string").fillna("UNKNOWN")
-    return isin.where(isin.notna() & (isin!=""),exchange+":"+symbol)
+    code=frame.get("security_code",pd.Series(pd.NA,index=frame.index)).astype("string")
+    fallback=exchange+":"+symbol
+    fallback=fallback.where(code.isna() | (code==""),exchange+":CODE:"+code)
+    return isin.where(isin.notna() & (isin!=""),fallback)
 
 
 def _ttm_xbrl_fundamentals(history):
@@ -159,6 +162,10 @@ def _attach_source(base,frame,override=False):
         if "symbol" in f and "symbol" in base:
             part=f.dropna(subset=["symbol"]).drop_duplicates("symbol",keep="last")
             fallback=base["symbol"].astype(str).str.upper().map(part.set_index("symbol")[field].to_dict())
+            mapped=mapped.where(mapped.notna(),fallback)
+        if "security_code" in f and "security_code" in base:
+            part=f.dropna(subset=["security_code"]).drop_duplicates("security_code",keep="last")
+            fallback=base["security_code"].astype("string").map(part.set_index("security_code")[field].to_dict())
             mapped=mapped.where(mapped.notna(),fallback)
         if field not in base:
             base[field]=mapped
