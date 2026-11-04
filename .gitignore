@@ -6,3 +6,9 @@ __pycache__/
 .pytest_cache/
 data/uploads/*
 !data/uploads/.gitkeep
+
+# Raw market snapshots and raw filings are temporary/local-only; do not publish them.
+data/live/market_latest.csv
+data/live/daily_research.csv
+data/filings/.cache/
+data/filings/payloads/
