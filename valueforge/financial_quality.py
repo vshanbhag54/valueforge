@@ -50,6 +50,7 @@ def assess_financial_quality(row, as_of=None):
         issues.append("COMPANY_IDENTITY_UNVERIFIED")
 
     numeric_issues = []
+    equity_issue = False
     for field in ("sales", "assets", "paid_up_capital", "face_value"):
         try:
             value = float(row.get(field))
@@ -66,17 +67,21 @@ def assess_financial_quality(row, as_of=None):
         try:
             if float(row.get("equity")) <= 0:
                 issues.append("NON_POSITIVE_EQUITY")
+                equity_issue = True
         except (TypeError, ValueError):
             pass
 
-    if not missing and period_status == "CURRENT" and basis == "consolidated" and source_url.startswith(("http://", "https://")) and match_method != "UNMATCHED" and not numeric_issues:
+    strong_identity = match_method in {"ISIN", "EXCHANGE_SCRIP_CODE", "EXCHANGE_SYMBOL"}
+    if (not missing and period_status == "CURRENT" and basis == "consolidated"
+            and source_url.startswith(("http://", "https://")) and strong_identity
+            and not numeric_issues and not equity_issue):
         status = "VALIDATED"
     elif "screener" in source_label or "manual" in source_label:
         status = "MANUAL_REVIEW_REQUIRED"
     elif period_status == "STALE_OR_FUTURE":
         status = "STALE"
-    elif match_method == "UNMATCHED":
-        status = "IDENTITY_UNVERIFIED"
+    elif not strong_identity:
+        status = "IDENTITY_REVIEW_REQUIRED"
     elif missing:
         status = "INCOMPLETE"
     else:
