@@ -215,7 +215,7 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
         out["ocf_to_net_profit"] = ocf / profit
     if out.get("reported_roe") is not None:
         out["roe"] = out["reported_roe"]
-    elif profit is not None and equity and equity > 0 and prior_equity and prior_equity > 0:
+    elif period_kind == "annual" and profit is not None and equity and equity > 0 and prior_equity and prior_equity > 0:
         out["roe"] = profit / ((equity + prior_equity) / 2) * 100
     if out.get("reported_interest_coverage") is not None:
         out["interest_coverage"] = out["reported_interest_coverage"]
@@ -223,7 +223,7 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
         out["interest_coverage"] = (pbt + finance) / finance
     if out.get("reported_roce") is not None:
         out["roce"] = out["reported_roce"]
-    elif pbt is not None and finance is not None and equity and debt is not None and equity + debt > 0:
+    elif period_kind == "annual" and pbt is not None and finance is not None and equity and debt is not None and equity + debt > 0:
         out["roce"] = (pbt + finance) / (equity + debt) * 100
     if op_profit is not None and sales and sales > 0:
         out["operating_margin"] = op_profit / sales * 100
