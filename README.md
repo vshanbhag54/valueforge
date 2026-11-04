@@ -39,3 +39,8 @@ To enable it:
 4. Trigger **ValueForge daily market refresh and research** from the Actions tab. The status JSON will report `database.status=CONNECTED` or an explicit error.
 
 The adapter is optional: without the secret, daily research continues with local checkpoints and reports `NOT_CONFIGURED`. The database is not provisioned by this repository; run the SQL only after you have chosen and created a database project.
+
+
+## Sector-specific financial analysis
+
+Financial companies are not screened with industrial-company debt/ROCE rules. ValueForge recognises banks, NBFCs, insurers, asset managers and brokers and shows the required sector metrics and evidence gaps in the financial-sector diligence queue. Metrics must be backed by a current source URL and reporting period. Even complete metrics route to sector review rather than an automatic value recommendation; dedicated sector valuation models and regulatory-ratio ingestion remain follow-on work.
