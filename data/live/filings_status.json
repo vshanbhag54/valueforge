@@ -1,18 +1,18 @@
 {
-  "run_at_utc": "2026-11-04T12:32:48.688076+00:00",
+  "run_at_utc": "2026-11-04T12:48:05.636763+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 221,
-    "bse_integrated": 168,
-    "usable_xbrl": 95,
-    "new_queue_records": 4
+    "nse": 201,
+    "bse_integrated": 186,
+    "usable_xbrl": 84,
+    "new_queue_records": 8
   },
   "discovery_errors": {},
-  "queue_total": 29675,
-  "pending_before_batch": 29675,
+  "queue_total": 29683,
+  "pending_before_batch": 29683,
   "batch_selected": 500,
   "downloaded": 499,
   "parsed": 388,
@@ -27,6 +27,14 @@
     "failed": 1
   },
   "processed_filing_keys": [
+    "JISLDVREQS|209585",
+    "SAREGAMA|209583",
+    "STOVEKRAFT|209578",
+    "GAJA|209574",
+    "JISLJALEQS|209573",
+    "DABUR|209571",
+    "JKLAKSHMI|209570",
+    "63MOONS|209566",
     "NAVNETEDUL|209547",
     "RUCHINFRA|209540",
     "ORKLAINDIA|209534",
@@ -517,15 +525,7 @@
     "HAL|157527",
     "SETL|157523",
     "NILKAMAL|157519",
-    "NIITLTD|157513",
-    "DBL|157499",
-    "MOL|157495",
-    "VMM|157471",
-    "GVPIL|157433",
-    "SKFINDIA|157431",
-    "CLEDUCATE|157427",
-    "JSWDULUX|157423",
-    "SIGNATURE|157420"
+    "NIITLTD|157513"
   ],
   "pending_after_batch": 29146,
   "state": "COMPLETED_WITH_ERRORS"
