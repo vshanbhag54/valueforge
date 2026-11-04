@@ -216,6 +216,25 @@ def _persist_filing_registry(cur, registry):
     if registry is None or registry.empty:
         return 0
     rows = registry.to_dict("records")
+    keys = [_text(row.get("filing_key")) for row in rows]
+    keys = [key for key in keys if key]
+    existing = {}
+    if keys:
+        cur.execute(
+            "select filing_key, parser_version, parse_status from valueforge.filings where filing_key = any(%s)",
+            (keys,),
+        )
+        existing = {str(k):(str(v) if v is not None else None, str(s) if s is not None else None) for k,v,s in cur.fetchall()}
+    rows = [
+        row for row in rows
+        if _text(row.get("filing_key")) and (
+            _text(row.get("filing_key")) not in existing
+            or existing[_text(row.get("filing_key"))] != (
+                str(_integer(row.get("parser_version"))) if _integer(row.get("parser_version")) is not None else None,
+                _text(row.get("parse_status")) or "DISCOVERED",
+            )
+        )
+    ]
     _company_upsert(cur, [
         {**row, "name": row.get("company") or row.get("name")}
         for row in rows
@@ -296,6 +315,23 @@ def _persist_statements(cur, fundamentals):
     if fundamentals is None or fundamentals.empty:
         return 0
     rows = fundamentals.to_dict("records")
+    keys = [_text(row.get("filing_key")) for row in rows]
+    keys = [key for key in keys if key]
+    existing = {}
+    if keys:
+        cur.execute(
+            "select filing_key, parser_version from valueforge.financial_statements where filing_key = any(%s)",
+            (keys,),
+        )
+        existing = {str(k):(_integer(v)) for k,v in cur.fetchall()}
+    rows = [
+        row for row in rows
+        if _text(row.get("filing_key"))
+        and (
+            _text(row.get("filing_key")) not in existing
+            or existing[_text(row.get("filing_key"))] != _integer(row.get("parser_version"))
+        )
+    ]
     _company_upsert(cur, rows)
     written = 0
     metric_fields = {
@@ -355,8 +391,8 @@ def _persist_statements(cur, fundamentals):
             insert into valueforge.financial_statements(
               filing_key,company_key,period_end,period_kind,period_days,
               reporting_basis,audited,data_as_of,source_url,taxonomy_family,
-              data_quality_status,statement_completeness_pct,metrics,fact_provenance
-            ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb)
+              data_quality_status,statement_completeness_pct,parser_version,metrics,fact_provenance
+            ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb)
             on conflict (filing_key) do update set
               period_end=excluded.period_end,period_kind=excluded.period_kind,
               period_days=excluded.period_days,reporting_basis=excluded.reporting_basis,
@@ -364,6 +400,7 @@ def _persist_statements(cur, fundamentals):
               source_url=excluded.source_url,taxonomy_family=excluded.taxonomy_family,
               data_quality_status=excluded.data_quality_status,
               statement_completeness_pct=excluded.statement_completeness_pct,
+              parser_version=excluded.parser_version,
               metrics=excluded.metrics,fact_provenance=excluded.fact_provenance,
               ingested_at=now()
             """,
@@ -371,7 +408,7 @@ def _persist_statements(cur, fundamentals):
                 filing_key,key,period_end,period_kind,_integer(row.get("period_days")),
                 basis,audited,_scalar(row.get("data_as_of")),source_url,
                 _text(row.get("taxonomy_family")),data_quality,completeness,
-                _json(metrics),_json(provenance),
+                _integer(row.get("parser_version")),_json(metrics),_json(provenance),
             ),
         )
         written += 1
