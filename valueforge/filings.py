@@ -13,7 +13,7 @@ QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
 BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
-PARSER_VERSION = "4"
+PARSER_VERSION = "5"
 INITIAL_BACKFILL_DAYS = 1825
 
 
@@ -50,6 +50,8 @@ def _registry_keys(registry):
         current = current[current["parser_version"].astype(str) == PARSER_VERSION]
     else:
         current = current.iloc[0:0]
+    if "parse_status" in current:
+        current = current[current["parse_status"].astype(str) == "PARSED"]
     return set(current["filing_key"].dropna().astype(str))
 
 
