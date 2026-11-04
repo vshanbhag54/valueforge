@@ -1,4 +1,4 @@
-from valueforge.filings import _strict_flag
+from valueforge.filings import _strict_flag, _strict_audited, _strict_cumulative, _strict_ind_as
 from valueforge.xbrl_extract import extract_filing_fundamentals
 from test_xbrl_extract import XML
 
@@ -8,8 +8,8 @@ def test_consolidation_classifier_rejects_unknown_and_standalone_values():
     assert _strict_flag("Standalone") is False
     assert _strict_flag("Non-Consolidated") is False
     assert _strict_flag("Unaudited") is False
-    assert _strict_flag("Audited") is True
-    assert _strict_flag("Ind-AS New") is True
+    assert _strict_flag("Audited") is False
+    assert _strict_flag("Ind-AS New") is False
     assert _strict_flag("mystery status") is False
 
 
@@ -67,3 +67,12 @@ def test_pending_filings_prioritize_recent_periods_before_history():
     ]
     ordered = _sort_pending_filings(records)
     assert [item.symbol for item in ordered] == ["CURRENT", "MID", "OLD", "UNKNOWN"]
+
+
+def test_audit_cumulative_and_ind_as_flags_are_not_consolidation_flags():
+    assert _strict_audited("Audited") is True
+    assert _strict_audited("Unaudited") is False
+    assert _strict_cumulative("YTD") is True
+    assert _strict_cumulative("Standalone") is False
+    assert _strict_ind_as("Ind AS") is True
+    assert _strict_ind_as("Unknown") is False
