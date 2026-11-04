@@ -95,6 +95,10 @@ def _lookup(facts, aliases):
     return None
 
 
+def _context_fact_coverage(facts, alias_map):
+    return sum(_lookup(facts, aliases) is not None for aliases in alias_map.values())
+
+
 def _pick_flow_context(summary, period_end, relating_to):
     kind, target, bounds = _period_target(relating_to, period_end)
     candidates = []
@@ -105,7 +109,9 @@ def _pick_flow_context(summary, period_end, relating_to):
             continue
         days = _days(ctx)
         if days is not None and bounds[0] <= days <= bounds[1]:
-            candidates.append((abs(days-target), ctx.context_id, days))
+            facts = _facts_for_context(summary, ctx.context_id)
+            coverage = _context_fact_coverage(facts, FLOW_ALIASES)
+            candidates.append((-coverage, abs(days-target), ctx.context_id, days))
     if not candidates and kind == "unknown":
         # Missing metadata: select a discrete quarter if present. Only fall
         # back to annual/half-year when no quarter context exists.
@@ -115,24 +121,31 @@ def _pick_flow_context(summary, period_end, relating_to):
                 continue
             days = _days(ctx)
             if days is not None and 150 <= days <= 400:
-                fallback.append((abs(days-365), ctx.context_id, days))
+                facts = _facts_for_context(summary, ctx.context_id)
+                coverage = _context_fact_coverage(facts, FLOW_ALIASES)
+                fallback.append((-coverage, abs(days-365), ctx.context_id, days))
         if fallback:
             fallback.sort()
-            _, context_id, days = fallback[0]
+            _, _, context_id, days = fallback[0]
             return context_id, "annual" if days >= 300 else "half_year", days
     if not candidates:
         return None, kind, None
     candidates.sort()
-    _, context_id, days = candidates[0]
+    _, _, context_id, days = candidates[0]
     if kind == "unknown":
         kind = "quarter"
     return context_id, kind, days
 
 
 def _instant_context(summary, period_end):
-    candidates = [c for c in summary.contexts.values()
-                  if c.is_instant and c.instant == period_end.isoformat() and not c.dimensions]
-    return candidates[0].context_id if candidates else None
+    candidates = []
+    for ctx in summary.contexts.values():
+        if not ctx.is_instant or ctx.instant != period_end.isoformat() or ctx.dimensions:
+            continue
+        facts = _facts_for_context(summary, ctx.context_id)
+        coverage = _context_fact_coverage(facts, INSTANT_ALIASES)
+        candidates.append((-coverage, ctx.context_id))
+    return sorted(candidates)[0][1] if candidates else None
 
 
 def _prior_equity(summary, period_end, aliases):
