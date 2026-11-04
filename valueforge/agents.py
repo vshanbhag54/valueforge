@@ -37,7 +37,7 @@ def gemini_enabled(): return bool(os.getenv("GEMINI_API_KEY"))
 def run_ai_committee(company,annual_report_text="",api_key=None,model=None):
     key=api_key or os.getenv("GEMINI_API_KEY")
     if not key: return deterministic_research(company,annual_report_text),{"mode":"deterministic","agents_run":0}
-    model=model or os.getenv("GEMINI_MODEL","gemini-2.5-flash-lite")
+    model=model or os.getenv("GEMINI_MODEL","gemini-3.5-flash-lite")
     facts={k:v for k,v in company.items() if k not in ("raw_pdf","_internal")}
     context="COMPANY FACTS (may be missing/incomplete; never invent values):\n"+str(facts)
     if annual_report_text: context+="\n\nEXTRACTED PRIMARY-REPORT TEXT (cite pages only if visible):\n"+annual_report_text[:24000]
@@ -49,7 +49,7 @@ Rules: use only supplied data; never invent figures, sources or page citations; 
 {context}
 Return a structured note with verified observations, interpretation, red flags, unknowns and follow-up questions."""
         try:
-            r=requests.post(endpoint,params={"key":key},json={"contents":[{"role":"user","parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.2,"maxOutputTokens":900}},timeout=90)
+            r=requests.post(endpoint,headers={"x-goog-api-key":key,"Content-Type":"application/json"},json={"contents":[{"role":"user","parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.2,"maxOutputTokens":900}},timeout=(10,60))
             r.raise_for_status()
             notes[role]="\n".join(p.get("text","") for p in r.json()["candidates"][0]["content"]["parts"])
         except Exception as exc: notes[role]=f"Agent unavailable: {type(exc).__name__}: {exc}"
@@ -60,7 +60,7 @@ Analyst notes:
 {agent_text}
 Write thesis, valuation caveats, accounting/governance risks, bear case, disconfirming evidence, gaps and next diligence steps."""
     try:
-        r=requests.post(endpoint,params={"key":key},json={"contents":[{"role":"user","parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.15,"maxOutputTokens":1200}},timeout=90)
+        r=requests.post(endpoint,headers={"x-goog-api-key":key,"Content-Type":"application/json"},json={"contents":[{"role":"user","parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.15,"maxOutputTokens":1200}},timeout=(10,60))
         r.raise_for_status()
         synthesis="\n".join(p.get("text","") for p in r.json()["candidates"][0]["content"]["parts"])
     except Exception as exc: synthesis=f"Committee synthesis unavailable: {type(exc).__name__}: {exc}"
