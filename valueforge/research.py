@@ -328,6 +328,8 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
     ai_status=_run_daily_ai(ranked,out)
     status_path=Path("data/live/filings_status.json")
     filing_status=json.loads(status_path.read_text(encoding="utf-8")) if status_path.exists() else {}
+    filing_registry_path=Path("data/fundamentals/processed_filings.csv")
+    filing_registry=pd.read_csv(filing_registry_path) if filing_registry_path.exists() and filing_registry_path.stat().st_size else pd.DataFrame()
     summary={
       "scan_at_utc":pd.Timestamp.now(tz="UTC").isoformat(),
       "market_rows":int(len(market)),
@@ -335,6 +337,8 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "security_master_status":master_status,
       "eod_price_available":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum()),
       "fundamental_rows":int(len(fundamentals)),
+      "filing_registry_rows":int(len(filing_registry)),
+      "filing_registry_parse_failures":int(filing_registry.get("parse_status",pd.Series(dtype=object)).astype(str).str.startswith("PARSE_FAILED").sum()),
       "matched_rows":int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum()),
       "validated_financial_rows":int(merged.get("financial_quality_status",pd.Series(dtype=object)).eq("VALIDATED").sum()),
       "financial_quality_by_status":merged.get("financial_quality_status",pd.Series(dtype=object)).value_counts().to_dict(),
@@ -356,6 +360,7 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
             market=market,
             security_master=security_master,
             fundamentals=fundamentals,
+            filing_registry=filing_registry,
             ranked=ranked,
             summary=summary,
         )
