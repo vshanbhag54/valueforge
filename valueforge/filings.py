@@ -11,7 +11,9 @@ import pandas as pd
 QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
-PARSER_VERSION = "2"
+BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
+PARSER_VERSION = "3"
+INITIAL_BACKFILL_DAYS = 1825
 
 
 def _key(record):
@@ -53,7 +55,9 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     from .xbrl_extract import extract_filing_fundamentals
 
     today = today or date.today()
-    start = today - timedelta(days=max(1, int(lookback_days)))
+    bootstrap = not BACKFILL_STATE_PATH.exists()
+    effective_lookback = max(int(lookback_days), INITIAL_BACKFILL_DAYS) if bootstrap else max(1, int(lookback_days))
+    start = today - timedelta(days=effective_lookback)
     root = Path("data/filings")
     cache_dir = root / ".cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -101,6 +105,15 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
             existing_queue.add(_key(record))
             discovery_counts["new_queue_records"] += 1
     queue.save(QUEUE_PATH)
+    if bootstrap and "nse" not in discovery_errors:
+        BACKFILL_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        BACKFILL_STATE_PATH.write_text(json.dumps({
+            "started_at_utc": datetime.now(timezone.utc).isoformat(),
+            "lookback_days": effective_lookback,
+            "nse_discovered": discovery_counts["nse"],
+            "xbrl_queue_total_after_discovery": len(queue.records),
+            "note": "Initial discovery completed; incremental runs now use the configured daily lookback."
+        }, indent=2), encoding="utf-8")
 
     registry = pd.read_csv(REGISTRY_PATH) if REGISTRY_PATH.exists() else pd.DataFrame()
     processed = _registry_keys(registry)
@@ -117,6 +130,8 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     status = {
         "run_at_utc": datetime.now(timezone.utc).isoformat(),
         "lookback_days": int(lookback_days),
+        "effective_lookback_days": effective_lookback,
+        "initial_backfill": bootstrap,
         "batch_limit": int(limit),
         "discovery": discovery_counts,
         "discovery_errors": discovery_errors,
