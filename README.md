@@ -4,7 +4,7 @@ Research-only Indian equity value-investing desk for NSE and BSE.
 
 ## Live market operation
 After merge, GitHub Actions runs weekdays at 21:15 IST. It:
-1. Finds latest NSE and BSE daily partitions in the public TejHQ Indian Markets dataset.
+1. Finds latest NSE and BSE annual exchange rollups in the public TejHQ Indian Markets dataset.
 2. Downloads daily EOD OHLCV and joins available derived market metrics.
 3. Saves market source/freshness status and latest universe.
 4. Runs the value screener against the fundamentals available in the repository.
