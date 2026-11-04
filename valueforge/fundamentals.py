@@ -6,7 +6,7 @@ import pandas as pd
 ALIASES={
 "symbol":["symbol","nse code","nse symbol","ticker","bse code","code"],
 "isin":["isin","isin code","security isin"],"name":["name","company","company name","security name"],
-"exchange":["exchange","market"],"sector":["sector","industry"],
+"exchange":["exchange","market"],"sector":["sector","industry"],"security_code":["security code","security_code","scrip code","scrip_cd","bse scrip code"],
 "period_end":["period end","period_end","financial year end","reporting date"],
 "basis":["basis","reporting basis","consolidated/standalone"],
 "data_as_of":["data as of","data_as_of","export date","filed at"],
@@ -76,7 +76,7 @@ def normalize_fundamentals(frame,source_label="User-uploaded Screener/export"):
             out[col]=raw[col]
     for field in NUMERIC:
         if field in out: out[field]=out[field].map(parse_number)
-    for field in ("symbol","isin","exchange"):
+    for field in ("symbol","isin","exchange","security_code"):
         if field in out: out[field]=_clean_identifier(out[field])
     if "exchange" not in out: out["exchange"]="UNKNOWN"
     if "basis" not in out: out["basis"]="unknown"
