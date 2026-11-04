@@ -12,7 +12,15 @@ import pandas as pd
 
 
 def database_url() -> str | None:
-    return os.getenv("VALUEFORGE_DATABASE_URL") or os.getenv("DATABASE_URL")
+    value=os.getenv("VALUEFORGE_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if value:
+        return value
+    # Streamlit Cloud stores secrets outside the process environment.
+    try:
+        import streamlit as st
+        return st.secrets.get("VALUEFORGE_DATABASE_URL") or st.secrets.get("DATABASE_URL")
+    except Exception:
+        return None
 
 
 def database_configured() -> bool:
@@ -525,3 +533,118 @@ def persist_research_snapshot(market, security_master, fundamentals, ranked, sum
                 if company_key(r)
             })
     return {"status":"CONNECTED","research_run_id":run_id,**counts}
+
+
+
+def database_overview() -> dict:
+    """Read-only operational overview for the authenticated dashboard."""
+    dsn=database_url()
+    if not dsn:
+        return {"status":"NOT_CONFIGURED"}
+    try:
+        import psycopg
+    except ImportError as exc:
+        return {"status":"ERROR","error":f"psycopg unavailable: {exc}"}
+    try:
+        with psycopg.connect(dsn,connect_timeout=8) as conn:
+            with conn.cursor() as cur:
+                cur.execute("select to_regclass('valueforge.research_runs')")
+                if cur.fetchone()[0] is None:
+                    return {"status":"SCHEMA_MISSING","note":"Apply database/schema.sql before using the persistent store."}
+                counts={}
+                for table in ("companies","securities","market_prices","filings","financial_statements","research_runs","research_results","data_quality_issues"):
+                    cur.execute(f"select count(*) from valueforge.{table}")
+                    counts[table]=int(cur.fetchone()[0])
+                cur.execute("""
+                    select id,started_at,market_date,model_version,status,summary
+                    from valueforge.research_runs order by id desc limit 1
+                """)
+                latest=cur.fetchone()
+                cur.execute("""
+                    select source,status,started_at,finished_at,rows_seen,rows_written,details
+                    from valueforge.ingestion_runs order by id desc limit 10
+                """)
+                recent=[{
+                    "source":row[0],"status":row[1],"started_at":_scalar(row[2]),
+                    "finished_at":_scalar(row[3]),"rows_seen":row[4],
+                    "rows_written":row[5],"details":row[6],
+                } for row in cur.fetchall()]
+                return {
+                    "status":"CONNECTED",
+                    "counts":counts,
+                    "latest_research_run":None if latest is None else {
+                        "id":latest[0],"started_at":_scalar(latest[1]),
+                        "market_date":_scalar(latest[2]),"model_version":latest[3],
+                        "status":latest[4],"summary":latest[5],
+                    },
+                    "recent_ingestion_runs":recent,
+                }
+    except Exception as exc:
+        return {"status":"ERROR","error":f"{type(exc).__name__}: {exc}"}
+
+
+def load_latest_database_research(limit: int = 1000) -> pd.DataFrame:
+    """Load the latest persisted company research results for dashboard history."""
+    dsn=database_url()
+    if not dsn:
+        return pd.DataFrame()
+    try:
+        import psycopg
+    except ImportError:
+        return pd.DataFrame()
+    limit=max(1,min(int(limit),10000))
+    with psycopg.connect(dsn,connect_timeout=8) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                select rr.exchange,rr.symbol,rr.close,rr.value_score,
+                       rr.research_status,rr.financial_quality_status,
+                       rr.valuation_status,rr.margin_of_safety_pct,
+                       rr.fair_value_bear,rr.fair_value_base,rr.fair_value_bull,
+                       rr.payload,rr.company_key
+                from valueforge.research_results rr
+                where rr.research_run_id = (
+                    select max(id) from valueforge.research_runs where status='COMPLETED'
+                )
+                order by rr.value_score desc nulls last
+                limit %s
+            """,(limit,))
+            rows=cur.fetchall()
+    columns=["exchange","symbol","close","value_score","research_status",
+             "financial_quality_status","valuation_status","margin_of_safety_pct",
+             "fair_value_bear","fair_value_base","fair_value_bull","payload","company_key"]
+    frame=pd.DataFrame(rows,columns=columns)
+    if not frame.empty and "payload" in frame:
+        payload=pd.json_normalize(frame.pop("payload").apply(lambda x:x if isinstance(x,dict) else {}))
+        frame=pd.concat([frame,payload],axis=1)
+    return frame
+
+
+def load_company_financial_history(key: str, limit: int = 24) -> pd.DataFrame:
+    """Load recent period statements and fact provenance for one stable company key."""
+    dsn=database_url()
+    if not dsn or not key:
+        return pd.DataFrame()
+    try:
+        import psycopg
+    except ImportError:
+        return pd.DataFrame()
+    limit=max(1,min(int(limit),100))
+    with psycopg.connect(dsn,connect_timeout=8) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                select period_end,period_kind,reporting_basis,audited,
+                       data_quality_status,statement_completeness_pct,
+                       parser_version,metrics,fact_provenance,source_url
+                from valueforge.financial_statements
+                where company_key=%s
+                order by period_end desc limit %s
+            """,(key,limit))
+            rows=cur.fetchall()
+    columns=["period_end","period_kind","basis","audited","data_quality_status",
+             "statement_completeness_pct","parser_version","metrics","fact_provenance","source_url"]
+    frame=pd.DataFrame(rows,columns=columns)
+    if not frame.empty:
+        metrics=pd.json_normalize(frame.pop("metrics").apply(lambda x:x if isinstance(x,dict) else {}))
+        provenance=pd.json_normalize(frame.pop("fact_provenance").apply(lambda x:x if isinstance(x,dict) else {})).add_prefix("provenance_")
+        frame=pd.concat([frame.reset_index(drop=True),metrics.reset_index(drop=True),provenance.reset_index(drop=True)],axis=1)
+    return frame
