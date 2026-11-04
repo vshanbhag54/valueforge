@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 import pandas as pd
+from .sector_models import apply_sector_models
 
 FIELDS=["close","pe","pb","roe","roce","debt_to_equity","interest_coverage","operating_margin","ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct","net_profit","sales","total_debt","cash","equity","ocf","fcf","margin_of_safety_pct"]
 @dataclass
@@ -54,7 +55,7 @@ def financial_sector(sector,name=None):
     return any(x in s for x in sector_terms) or any(x in n for x in name_terms)
 
 def screen_universe(frame):
-    df=frame.copy()
+    df=apply_sector_models(frame.copy())
     for k in FIELDS:
         if k not in df: df[k]=float("nan")
         df[k]=pd.to_numeric(df[k],errors="coerce")
@@ -62,7 +63,9 @@ def screen_universe(frame):
     df["value_score"]=[x[0] for x in pairs]; df["fundamental_coverage"]=[x[1] for x in pairs]
     def status(r):
         if pd.isna(r.get("close")): return "PRICE_UNAVAILABLE"
-        if financial_sector(r.get("sector"),r.get("name")): return "SECTOR_MODEL_REQUIRED"
+        if financial_sector(r.get("sector"),r.get("name")):
+            model_status=str(r.get("sector_research_status") or "")
+            return model_status if model_status not in {"","NOT_FINANCIAL_SECTOR"} else "SECTOR_MODEL_REQUIRED"
         if r["fundamental_coverage"]<4: return "FUNDAMENTALS_INCOMPLETE"
         if pd.isna(r.get("period_end")): return "PERIOD_NOT_VERIFIED"
         p=pd.to_datetime(r.get("period_end"),errors="coerce")
@@ -95,4 +98,6 @@ def screen_universe(frame):
     counts=df["research_status"].value_counts().to_dict()
     return ScreeningResult(df,{"total":len(df),"research_candidates":int(counts.get("VALUE_RESEARCH_CANDIDATE",0)),
       "watchlist":int(counts.get("VALUE_WATCHLIST",0)),"fundamentals_incomplete":int(counts.get("FUNDAMENTALS_INCOMPLETE",0)),
-      "price_only":int(df["is_price_only"].sum()),"by_status":counts})
+      "price_only":int(df["is_price_only"].sum()),"by_status":counts,
+      "sector_models_by_status":df.loc[df["sector_model"].notna(),"sector_research_status"].value_counts().to_dict(),
+      "sector_models_by_type":df.loc[df["sector_model"].notna(),"sector_model"].value_counts().to_dict()})
