@@ -13,6 +13,8 @@ ALIASES={
 "source_url":["source url","source_url","source","url"],
 "pe":["p/e","pe","stock p/e","price to earnings"],"pb":["p/b","pb","price to book value","price/book"],
 "market_cap_cr":["market cap","market cap rs.cr.","mar cap rs.cr.","market capitalization"],
+"shares_outstanding_cr":["shares outstanding cr","shares outstanding crore","number of shares crore","equity shares outstanding crore","issued shares crore"],
+"shares_outstanding_source":["shares outstanding source","share count source","issued shares source"],
 "roe":["roe","roe %","return on equity","return on equity %"],"roce":["roce","roce %","return on capital employed","return on capital employed %"],
 "debt_to_equity":["debt to equity","debt/equity","debt-equity","debt to equity ratio"],
 "interest_coverage":["interest coverage","interest coverage ratio"],
@@ -38,7 +40,7 @@ ALIASES={
 "imported_at_utc":["imported at utc"],"unit_currency_note":["unit currency note"]
 }
 NUMERIC={
-"pe","pb","market_cap_cr","roe","roce","debt_to_equity","interest_coverage","operating_margin",
+"pe","pb","market_cap_cr","shares_outstanding_cr","roe","roce","debt_to_equity","interest_coverage","operating_margin",
 "ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct",
 "net_profit","sales","total_debt","cash","equity","ocf","capex","fcf","basic_eps","paid_up_capital",
 "face_value","assets","profit_before_tax","finance_cost","operating_profit","period_days","fact_count","context_count"
