@@ -71,10 +71,17 @@ def _ttm_xbrl_fundamentals(history):
         equity=pd.to_numeric(pd.Series([latest.get("equity")]),errors="coerce").iloc[0]
         prior_equity=pd.to_numeric(pd.Series([q.iloc[-2].get("equity")]),errors="coerce").iloc[0]
         debt=pd.to_numeric(pd.Series([latest.get("total_debt")]),errors="coerce").iloc[0]
+        prior_debt=pd.to_numeric(pd.Series([q.iloc[-2].get("total_debt")]),errors="coerce").iloc[0]
         if pd.notna(profit) and pd.notna(equity) and pd.notna(prior_equity) and equity>0 and prior_equity>0:
             latest["roe"]=profit/((equity+prior_equity)/2)*100
-        if pd.notna(pbt) and pd.notna(finance) and pd.notna(equity) and pd.notna(debt) and equity+debt>0:
-            latest["roce"]=(pbt+finance)/(equity+debt)*100
+        # ROCE uses average opening/closing capital employed, not only closing capital.
+        if (pd.notna(pbt) and pd.notna(finance) and pd.notna(equity) and pd.notna(debt)
+                and pd.notna(prior_equity) and pd.notna(prior_debt)):
+            current_capital=equity+debt
+            prior_capital=prior_equity+prior_debt
+            average_capital=(current_capital+prior_capital)/2
+            if average_capital>0:
+                latest["roce"]=(pbt+finance)/average_capital*100
         latest["source_label"]="Exchange XBRL filings (TTM derived from 4 quarters)"
         ttm.append(latest)
     return pd.DataFrame(ttm)
@@ -85,11 +92,8 @@ def _latest_xbrl(history):
     ttm=_ttm_xbrl_fundamentals(history)
     annual=history[history.get("period_kind",pd.Series("",index=history.index)).astype("string").str.lower().str.contains("annual",na=False)].copy()
     if not ttm.empty:
-        # Prefer a valid four-quarter TTM row; annual figures remain available
-        # as fallback for companies with fewer than four imported quarters.
         combined=pd.concat([annual,ttm],ignore_index=True,sort=False)
         chosen=latest_fundamentals(combined)
-        # Per company, TTM is more current when it is based on four verified quarters.
         ttm_keys=set(_company_key(ttm).tolist())
         key=_company_key(chosen)
         for ix,row in chosen.iterrows():
@@ -99,11 +103,43 @@ def _latest_xbrl(history):
                     for col in match.columns:
                         if col in chosen and pd.notna(match.iloc[-1].get(col)):
                             chosen.at[ix,col]=match.iloc[-1][col]
-        return chosen
-    # If only annual and/or quarter filings are available, the annual row is
-    # the defensible fallback for annual profitability and valuation.
-    source=annual if not annual.empty else history
-    return latest_fundamentals(source)
+    else:
+        source=annual if not annual.empty else history
+        chosen=latest_fundamentals(source)
+
+    # 5-year growth is derived only from annual filings spanning at least four
+    # years. Never annualize a single quarter or label a 2-year CAGR as 5-year.
+    if not chosen.empty and not annual.empty:
+        annual=annual.copy()
+        annual["_period"]=pd.to_datetime(annual.get("period_end"),errors="coerce")
+        annual["_company_key"]=_company_key(annual)
+        growth={}
+        for company_key,group in annual.groupby("_company_key",dropna=False):
+            group=group.dropna(subset=["_period"]).sort_values("_period").drop_duplicates("_period",keep="last")
+            if len(group)<2: continue
+            latest=group.iloc[-1]
+            candidates=group[group["_period"] <= latest["_period"]-pd.Timedelta(days=4*365)]
+            candidates=candidates[candidates["_period"] >= latest["_period"]-pd.Timedelta(days=7*365)]
+            if candidates.empty: continue
+            earliest=candidates.iloc[-1]
+            years=(latest["_period"]-earliest["_period"]).days/365.25
+            if years<4: continue
+            item={"sales_cagr_years":round(years,2),"profit_cagr_years":round(years,2)}
+            for field,target in [("sales","sales_cagr_5y"),("net_profit","profit_cagr_5y")]:
+                begin=pd.to_numeric(pd.Series([earliest.get(field)]),errors="coerce").iloc[0]
+                finish=pd.to_numeric(pd.Series([latest.get(field)]),errors="coerce").iloc[0]
+                if pd.notna(begin) and pd.notna(finish) and begin>0 and finish>0:
+                    item[target]=((finish/begin)**(1/years)-1)*100
+            growth[company_key]=item
+        if growth:
+            chosen_keys=_company_key(chosen)
+            for col in ["sales_cagr_5y","profit_cagr_5y","sales_cagr_years","profit_cagr_years"]:
+                if col not in chosen: chosen[col]=float("nan")
+            for ix,company_key in chosen_keys.items():
+                if company_key in growth:
+                    for col,value in growth[company_key].items():
+                        chosen.at[ix,col]=value
+    return chosen
 
 
 def _attach_source(base,frame,override=False):
@@ -139,14 +175,17 @@ def _derive_market_valuation(frame):
     else: base["market_cap_cr"]=base["market_cap_cr"].where(base["market_cap_cr"].notna(),market_cap)
     net_profit=pd.to_numeric(base.get("net_profit",pd.Series(index=base.index,dtype=float)),errors="coerce")
     equity=pd.to_numeric(base.get("equity",pd.Series(index=base.index,dtype=float)),errors="coerce")
-    calculated_pe=market_cap/net_profit.where(net_profit>0)
+    period_kind=base.get("period_kind",pd.Series("",index=base.index)).astype("string").str.lower()
+    earnings_period_ok=period_kind.str.contains("annual|ttm",regex=True,na=False)
+    # Quarterly PAT/EPS are never multiplied into an apparent annual P/E.
+    calculated_pe=(market_cap/net_profit.where(net_profit>0)).where(earnings_period_ok)
     calculated_pb=market_cap/equity.where(equity>0)
     if "pe" not in base: base["pe"]=calculated_pe
     else: base["pe"]=base["pe"].where(base["pe"].notna(),calculated_pe)
     if "pb" not in base: base["pb"]=calculated_pb
     else: base["pb"]=base["pb"].where(base["pb"].notna(),calculated_pb)
     eps=pd.to_numeric(base.get("basic_eps",pd.Series(index=base.index,dtype=float)),errors="coerce")
-    eps_pe=close/eps.where(eps>0)
+    eps_pe=(close/eps.where(eps>0)).where(earnings_period_ok)
     base["pe"]=base["pe"].where(base["pe"].notna(),eps_pe)
     return base
 
