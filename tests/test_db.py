@@ -51,6 +51,7 @@ def test_snapshot_persistence_is_a_noop_when_database_not_configured(monkeypatch
         "companies":0,
         "securities":0,
         "prices":0,
+        "filings":0,
         "statements":0,
         "research_rows":0,
     }
