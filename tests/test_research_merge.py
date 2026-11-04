@@ -24,3 +24,19 @@ def test_bse_fundamentals_match_exchange_security_master_by_scrip_code():
     assert row["period_end"]=="2026-03-31"
     assert row["fundamentals_match"]
     assert row["pe"]==10
+
+
+def test_latest_market_snapshot_date_ignores_unpriced_listing_nulls():
+    from valueforge.research import latest_market_snapshot_date
+
+    market = pd.DataFrame({
+        "snapshot_date": ["2026-11-03", pd.NA, float("nan"), "2026-11-02"],
+    })
+    assert latest_market_snapshot_date(market) == "2026-11-03"
+
+
+def test_latest_market_snapshot_date_returns_unknown_when_all_missing():
+    from valueforge.research import latest_market_snapshot_date
+
+    market = pd.DataFrame({"snapshot_date": [pd.NA, float("nan")]})
+    assert latest_market_snapshot_date(market) == "unknown"
