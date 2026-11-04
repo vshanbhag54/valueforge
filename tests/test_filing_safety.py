@@ -52,3 +52,18 @@ def test_registry_keys_do_not_accept_older_parser_versions():
         "parse_status": ["PARSED", "PARSED"],
     })
     assert _registry_keys(registry) == set()
+
+
+def test_pending_filings_prioritize_recent_periods_before_history():
+    from datetime import date, datetime
+    from types import SimpleNamespace
+    from valueforge.filings import _sort_pending_filings
+
+    records = [
+        SimpleNamespace(symbol="OLD", period_to=date(2020, 3, 31), filing_ts=datetime(2020, 5, 1)),
+        SimpleNamespace(symbol="CURRENT", period_to=date(2026, 9, 30), filing_ts=datetime(2026, 11, 4)),
+        SimpleNamespace(symbol="MID", period_to=date(2023, 3, 31), filing_ts=datetime(2023, 5, 1)),
+        SimpleNamespace(symbol="UNKNOWN", period_to=None, filing_ts=None),
+    ]
+    ordered = _sort_pending_filings(records)
+    assert [item.symbol for item in ordered] == ["CURRENT", "MID", "OLD", "UNKNOWN"]
