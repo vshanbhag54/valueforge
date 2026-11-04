@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from dataclasses import replace
 from pathlib import Path
 import json
 import shutil
@@ -42,6 +43,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
     temporary and removed after parsing; they are not committed to the repo.
     """
     try:
+        import india_xbrl.discovery as nse_discovery
         from india_xbrl.bse import BseDiscoveryClient
         from india_xbrl.discovery import DiscoveryClient
         from india_xbrl.fetcher import Fetcher, plan_from_discovery
@@ -53,6 +55,45 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
         raise RuntimeError("Install india-xbrl-filings==0.1.1 to enable XBRL ingestion") from exc
 
     from .xbrl_extract import extract_filing_fundamentals
+
+    # The upstream package historically treated unknown truthy words (such
+    # as "Standalone") as consolidated=True. Override that coercion strictly:
+    # an unknown classification must never admit a standalone filing.
+    def strict_flag(value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        token = str(value or "").strip().lower().replace("_", " ").replace("-", " ")
+        token = " ".join(token.split())
+        if token in {"y", "yes", "true", "1", "consolidated", "cons", "audited", "cumulative", "cum", "ind as new"}:
+            return True
+        if token in {"n", "no", "false", "0", "standalone", "non consolidated", "unaudited", "un audited", "ind as old", ""}:
+            return False
+        if token.startswith(("non ", "un ", "standalone")):
+            return False
+        return False
+
+    original_record_from_row = nse_discovery._record_from_row
+    def strict_record_from_row(row, source, seq):
+        record = original_record_from_row(row, source, seq)
+        company = (row.get("cmName") or row.get("companyName") or row.get("company_name")
+                   or row.get("sm_name") or row.get("companyname") or record.company)
+        isin = row.get("isin") or row.get("sm_isin") or row.get("isinCode") or record.isin
+        consolidated_value = row.get("consolidated")
+        if consolidated_value is None:
+            consolidated_value = row.get("consol")
+        return replace(
+            record,
+            company=str(company or "").strip(),
+            isin=str(isin or "").strip() or None,
+            consolidated=strict_flag(consolidated_value),
+            audited=strict_flag(row.get("audited")),
+            cumulative=strict_flag(row.get("cumulative")),
+            ind_as=strict_flag(row.get("ind_as") or row.get("indAs") or row.get("accountingStandard")),
+        )
+    nse_discovery._as_bool = strict_flag
+    nse_discovery._record_from_row = strict_record_from_row
 
     today = today or date.today()
     bootstrap = not BACKFILL_STATE_PATH.exists()
