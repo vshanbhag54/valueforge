@@ -1,0 +1,4 @@
+symbol,name,exchange,sector,period_end,basis,data_as_of,source_url,pe,pb,roe,roce,debt_to_equity,interest_coverage,operating_margin,ocf_to_net_profit,market_cap_cr,promoter_pledge_pct,contingent_liabilities,auditor_qualification,related_party_flags
+DEMO1,Example Manufacturing Co,NSE,Industrials,2025-03-31,consolidated,2025-04-01,ILLUSTRATIVE_NOT_REAL,12,1.8,18,21,0.25,8,16,1.1,8500,0,not assessed,not assessed,not assessed
+DEMO2,Example Consumer Co,NSE,Consumer,2025-03-31,consolidated,2025-04-01,ILLUSTRATIVE_NOT_REAL,34,7,24,27,0.1,15,19,0.9,14000,0,not assessed,not assessed,not assessed
+DEMO3,Example Cyclical Co,BSE,Materials,2025-03-31,standalone,2025-04-01,ILLUSTRATIVE_NOT_REAL,7,0.9,9,11,1.7,2,8,0.4,1800,2,not assessed,not assessed,not assessed
