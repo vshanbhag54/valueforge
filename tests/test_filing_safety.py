@@ -28,3 +28,27 @@ def test_context_selection_prefers_fullest_statement_fact_set():
     })
     assert row["flow_context_id"]=="OneD"
     assert row["sales"]==50
+
+
+def test_registry_keys_accept_numeric_csv_parser_versions():
+    import pandas as pd
+    from valueforge.filings import _registry_keys
+
+    registry = pd.DataFrame({
+        "filing_key": ["A|1", "B|2", "C|3", "D|4"],
+        "parser_version": [8.0, "8", 3.0, None],
+        "parse_status": ["PARSED", "PARSE_FAILED: unsupported context", "PARSED", "PARSED"],
+    })
+    assert _registry_keys(registry) == {"A|1", "B|2"}
+
+
+def test_registry_keys_do_not_accept_older_parser_versions():
+    import pandas as pd
+    from valueforge.filings import _registry_keys
+
+    registry = pd.DataFrame({
+        "filing_key": ["OLD|1", "UNKNOWN|2"],
+        "parser_version": [7.0, None],
+        "parse_status": ["PARSED", "PARSED"],
+    })
+    assert _registry_keys(registry) == set()
