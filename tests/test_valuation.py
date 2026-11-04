@@ -11,7 +11,7 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
         "paid_up_capital":100.0,
         "face_value":10.0,
         "sales_cagr_5y":10.0,
-        "profit_cagr_5y":8.0,
+        "profit_cagr_5y":8.0,\n        "financial_quality_status":"VALIDATED",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
     assert row["dcf_fair_value_bear"] < row["dcf_fair_value_base"]
@@ -27,7 +27,7 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
 def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
     frame=pd.DataFrame([
         {"close":100.0,"fcf":-10.0,"paid_up_capital":100.0,"face_value":10.0,
-         "sales_cagr_5y":10.0,"profit_cagr_5y":8.0},
+         "sales_cagr_5y":10.0,"profit_cagr_5y":8.0,"financial_quality_status":"VALIDATED"},
         {"close":100.0,"fcf":100.0,"paid_up_capital":None,"face_value":None,
          "sales_cagr_5y":10.0,"profit_cagr_5y":8.0},
     ])
@@ -42,8 +42,19 @@ def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
 def test_dcf_requires_both_five_year_growth_series():
     frame=pd.DataFrame([{
         "close":100.0,"fcf":100.0,"paid_up_capital":10.0,"face_value":1.0,
-        "sales_cagr_5y":8.0,"profit_cagr_5y":None,
+        "sales_cagr_5y":8.0,"profit_cagr_5y":None,"financial_quality_status":"VALIDATED",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
     assert pd.isna(row["dcf_fair_value_base"])
     assert row["valuation_status"]=="FIVE_YEAR_GROWTH_HISTORY_UNAVAILABLE"
+
+
+def test_dcf_refuses_unvalidated_statements():
+    frame=pd.DataFrame([{
+        "close":100.0,"fcf":100.0,"paid_up_capital":10.0,"face_value":1.0,
+        "sales_cagr_5y":8.0,"profit_cagr_5y":8.0,
+        "financial_quality_status":"IDENTITY_UNVERIFIED",
+    }])
+    row=apply_intrinsic_valuation(frame).iloc[0]
+    assert pd.isna(row["dcf_fair_value_base"])
+    assert row["valuation_status"]=="FINANCIAL_DATA_NOT_VALIDATED"
