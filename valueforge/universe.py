@@ -198,8 +198,10 @@ def attach_market_prices(master, market):
         left=base[base["isin"].notna() & ~base["isin"].isin(["","NAN"])].copy()
         right=quotes[quotes["isin"].notna() & ~quotes["isin"].isin(["","NAN"])].copy()
         merged=left.merge(right,on=["exchange","isin"],how="left",suffixes=("","_quote"))
-        used=set(left["_master_row"])
-        missing=base[~base["_master_row"].isin(used)].copy()
+        hit=merged.get("close",pd.Series(index=merged.index,dtype=float)).notna()
+        matched_ids=set(merged.loc[hit,"_master_row"])
+        missing=base[~base["_master_row"].isin(matched_ids)].copy()
+        merged=merged.loc[hit].copy()
     else:
         merged=pd.DataFrame()
         missing=base.copy()
@@ -213,15 +215,14 @@ def attach_market_prices(master, market):
         code_join=bse.merge(q,on=["exchange","_code"],how="left",suffixes=("","_quote"))
         code_join=code_join.drop(columns=["_code"],errors="ignore")
         code_hit=code_join.get("close",pd.Series(index=code_join.index,dtype=float)).notna()
-        # Keep code-joined rows, including those with no quote; no symbol retry
-        # can safely improve a numeric BSE security-code match.
-        parts=[merged,code_join] if not merged.empty else [code_join]
+        parts=[merged,code_join.loc[code_hit].copy()] if not merged.empty else [code_join.loc[code_hit].copy()]
+        bse=bse.loc[~bse["_master_row"].isin(set(code_join.loc[code_hit,"_master_row"]))].drop(columns=["_code"],errors="ignore")
     else:
         parts=[merged] if not merged.empty else []
     if not others.empty:
         symbol_join=others.merge(quotes,on=["exchange","symbol"],how="left",suffixes=("","_quote"))
         parts.append(symbol_join)
-    if not bse.empty and "security_code" not in bse:
+    if not bse.empty:
         parts.append(bse.merge(quotes,on=["exchange","symbol"],how="left",suffixes=("","_quote")))
     merged=pd.concat(parts,ignore_index=True,sort=False) if parts else base
 
