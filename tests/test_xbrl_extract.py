@@ -27,6 +27,7 @@ XML = b"""<?xml version="1.0"?>
  <in-capmkt:FinanceCosts contextRef="OneD" unitRef="INR" decimals="-3">10000000</in-capmkt:FinanceCosts>
  <in-capmkt:OperatingProfit contextRef="OneD" unitRef="INR" decimals="-3">100000000</in-capmkt:OperatingProfit>
  <in-capmkt:CashFlowsFromUsedInOperatingActivities contextRef="OneD" unitRef="INR" decimals="-3">60000000</in-capmkt:CashFlowsFromUsedInOperatingActivities>
+ <in-capmkt:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities contextRef="OneD" unitRef="INR" decimals="-3">-10000000</in-capmkt:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities>
  <in-capmkt:EquityAttributableToOwnersOfParent contextRef="N1D" unitRef="INR" decimals="-3">300000000</in-capmkt:EquityAttributableToOwnersOfParent>
  <in-capmkt:EquityAttributableToOwnersOfParent contextRef="Prior" unitRef="INR" decimals="-3">250000000</in-capmkt:EquityAttributableToOwnersOfParent>
  <in-capmkt:Assets contextRef="N1D" unitRef="INR" decimals="-3">500000000</in-capmkt:Assets>
