@@ -6,6 +6,7 @@ import pandas as pd
 from .fundamentals import latest_fundamentals, normalize_fundamentals
 from .market_data import load_market_snapshot
 from .scoring import screen_universe
+from .universe import attach_market_prices, load_security_master
 
 FUNDAMENTALS_PATH=Path("data/fundamentals/company_fundamentals.csv")
 XBRL_FUNDAMENTALS_PATH=Path("data/fundamentals/xbrl_fundamentals.csv")
@@ -239,6 +240,11 @@ def _run_daily_ai(ranked,out_dir):
 def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=FUNDAMENTALS_PATH,output_dir="data/live"):
     market=load_market_snapshot(market_path)
     if market.empty: raise RuntimeError("No market snapshot found. Run the market refresh workflow first.")
+    security_master=load_security_master()
+    master_status_path=Path("data/master/security_master_status.json")
+    master_status=json.loads(master_status_path.read_text(encoding="utf-8")) if master_status_path.exists() else {}
+    if not security_master.empty:
+        market=attach_market_prices(security_master,market)
     fundamentals=load_fundamentals(fundamentals_path)
     merged=merge_market_and_fundamentals(market,fundamentals)
     result=screen_universe(merged)
@@ -252,6 +258,9 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
     summary={
       "scan_at_utc":pd.Timestamp.now(tz="UTC").isoformat(),
       "market_rows":int(len(market)),
+      "listed_security_master_rows":int(len(security_master)),
+      "security_master_status":master_status,
+      "eod_price_available":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum()),
       "fundamental_rows":int(len(fundamentals)),
       "matched_rows":int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum()),
       "market_date":str(market["snapshot_date"].max()) if "snapshot_date" in market else "unknown",
