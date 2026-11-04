@@ -7,7 +7,7 @@ import pandas as pd
 CORE_STATEMENT_FIELDS = (
     "sales", "net_profit", "profit_before_tax",
     "equity", "assets", "total_debt",
-    "ocf", "capex",
+    "ocf",
 )
 
 
@@ -59,6 +59,8 @@ def assess_financial_quality(row, as_of=None):
             pass
     if numeric_issues:
         issues.extend(numeric_issues)
+    if _is_missing(row.get("capex")):
+        issues.append("CAPEX_NOT_DISCLOSED_DCF_UNAVAILABLE")
 
     if not _is_missing(row.get("equity")):
         try:
