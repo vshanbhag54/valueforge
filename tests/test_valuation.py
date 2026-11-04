@@ -1,4 +1,3 @@
-import math
 import pandas as pd
 
 from valueforge.valuation import apply_intrinsic_valuation
@@ -11,7 +10,8 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
         "paid_up_capital":100.0,
         "face_value":10.0,
         "sales_cagr_5y":10.0,
-        "profit_cagr_5y":8.0,\n        "financial_quality_status":"VALIDATED",
+        "profit_cagr_5y":8.0,
+        "financial_quality_status":"VALIDATED",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
     assert row["dcf_fair_value_bear"] < row["dcf_fair_value_base"]
