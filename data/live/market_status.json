@@ -1,0 +1,22 @@
+{
+  "provider": "TejHQ / tejhq-indian-markets (Hugging Face)",
+  "dataset_id": "tejhq/indian-markets",
+  "data_type": "end_of_day_bhavcopy",
+  "intraday": false,
+  "retrieved_at_utc": "2026-11-04T08:37:11.341648+00:00",
+  "exchange_dates": {
+    "NSE": "2026-11-03",
+    "BSE": "2026-11-03"
+  },
+  "rows": 5667,
+  "source_files": [
+    "nse/year=2026/nse_2026.parquet",
+    "bse/year=2026/bse_2026.parquet"
+  ],
+  "metric_files": [
+    "metrics/nse_latest.parquet",
+    "metrics/bse_latest.parquet"
+  ],
+  "coverage_note": "Daily-traded supported NSE EQ/BE/BZ and BSE A/B/T series in the source dataset; not every listed, suspended or non-trading instrument.",
+  "source_url": "https://huggingface.co/datasets/tejhq/indian-markets"
+}

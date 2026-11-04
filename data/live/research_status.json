@@ -1,0 +1,21 @@
+{
+  "scan_at_utc": "2026-11-04T08:37:11.953195+00:00",
+  "market_rows": 5667,
+  "fundamental_rows": 0,
+  "matched_rows": 0,
+  "market_date": "2026-11-03",
+  "total": 5667,
+  "research_candidates": 0,
+  "watchlist": 0,
+  "fundamentals_incomplete": 5667,
+  "price_only": 5667,
+  "by_status": {
+    "FUNDAMENTALS_INCOMPLETE": 5667
+  },
+  "ai_research": {
+    "status": "NOT_CONFIGURED",
+    "reports_written": 0,
+    "note": "Add GEMINI_API_KEY to GitHub Actions secrets for scheduled AI diligence."
+  },
+  "method": "Deterministic all-market value triage plus optional quota-limited LLM diligence; no broker actions."
+}
