@@ -40,7 +40,7 @@ def _valid_row(**overrides):
     row={
         "sales":100.0,"net_profit":10.0,"profit_before_tax":12.0,
         "equity":50.0,"assets":100.0,"total_debt":10.0,"ocf":12.0,
-        "period_end":"2026-09-30","basis":"consolidated",
+        "period_end":"2026-09-30","period_kind":"TTM from 4 discrete quarters","basis":"consolidated",
         "source_url":"https://exchange.example/filing.xml",
         "source_label":"Exchange XBRL filing",
         "fundamental_match_method":"ISIN",
@@ -76,3 +76,14 @@ def test_financial_quality_blocks_non_positive_equity():
     result=assess_financial_quality(_valid_row(equity=0),as_of="2026-11-04")
     assert result["financial_quality_status"]=="REVIEW_REQUIRED"
     assert "NON_POSITIVE_EQUITY" in result["financial_quality_issues"]
+
+
+def test_financial_quality_requires_audited_annual_statements():
+    annual=assess_financial_quality(_valid_row(period_kind="annual",audited=False),as_of="2026-11-04")
+    audited=assess_financial_quality(_valid_row(period_kind="annual",audited=True),as_of="2026-11-04")
+    interim=assess_financial_quality(_valid_row(period_kind="quarter",audited=False),as_of="2026-11-04")
+    assert annual["financial_quality_status"]=="REVIEW_REQUIRED"
+    assert "ANNUAL_STATEMENT_NOT_AUDITED" in annual["financial_quality_issues"]
+    assert audited["financial_quality_status"]=="VALIDATED"
+    assert interim["financial_quality_status"]=="REVIEW_REQUIRED"
+    assert "ANNUAL_OR_TTM_REQUIRED" in interim["financial_quality_issues"]
