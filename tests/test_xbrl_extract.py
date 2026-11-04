@@ -99,3 +99,16 @@ def test_period_context_can_differ_by_a_few_days_without_using_wrong_period():
     assert row["period_end"]=="2025-07-01"
     assert row["period_end_gap_days"]==1
     assert row["instant_date_gap_days"]==1
+
+
+def test_period_from_overrides_ambiguous_quarter_and_half_year_label():
+    from valueforge.xbrl_extract import _period_hint
+
+    assert _period_hint(
+        "Financial results for the quarter and half year ended",
+        "2025-07-01","2025-09-30"
+    )=="quarter"
+    assert _period_hint(
+        "Financial results for the quarter and half year ended",
+        "2025-04-01","2025-09-30"
+    )=="half_year"
