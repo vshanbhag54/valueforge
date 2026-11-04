@@ -1,34 +1,34 @@
 {
-  "scan_at_utc": "2026-11-04T09:17:17.944382+00:00",
+  "scan_at_utc": "2026-11-04T09:21:27.880969+00:00",
   "market_rows": 5667,
   "fundamental_rows": 13,
   "matched_rows": 16,
   "market_date": "2026-11-03",
   "filings_status": {
-    "run_at_utc": "2026-11-04T09:16:47.419118+00:00",
+    "run_at_utc": "2026-11-04T09:20:53.384483+00:00",
     "lookback_days": 45,
     "batch_limit": 60,
     "discovery": {
       "nse": 21,
-      "bse_integrated": 27,
+      "bse_integrated": 29,
       "usable_xbrl": 18,
-      "new_queue_records": 18
+      "new_queue_records": 1
     },
     "discovery_errors": {},
-    "queue_total": 18,
-    "pending_before_batch": 18,
-    "batch_selected": 18,
+    "queue_total": 19,
+    "pending_before_batch": 19,
+    "batch_selected": 19,
     "downloaded": 15,
     "parsed": 13,
     "parse_failed": 2,
-    "fetch_failed": 3,
+    "fetch_failed": 4,
     "fetch_stats": {
-      "total": 18,
+      "total": 19,
       "downloaded": 15,
       "skipped_already_ok": 0,
       "no_xbrl_link": 0,
       "skipped_standalone": 0,
-      "failed": 3
+      "failed": 4
     },
     "pending_after_batch": 0,
     "state": "COMPLETED"
