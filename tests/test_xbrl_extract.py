@@ -20,17 +20,17 @@ XML = b"""<?xml version="1.0"?>
   <xbrli:period><xbrli:instant>2024-06-30</xbrli:instant></xbrli:period>
  </xbrli:context>
  <in-capmkt:RevenueFromOperations contextRef="OneD" unitRef="INR" decimals="-3">500000000</in-capmkt:RevenueFromOperations>
- <in-capmkt:ProfitLossForPeriodFromContinuingOperationsForPeriodFromContinuingOperations contextRef="OneD" unitRef="INR" decimals="-3">50000000</in-capmkt:ProfitLossForPeriodFromContinuingOperations>
- <in-capmkt:ProfitBeforeTax contextRef="OneD" unitRef="INR" decimals="-3">70000000</in-capmkt:ProfitLossForPeriodFromContinuingOperationsFromContinuingOperationsBeforeTax>
+ <in-capmkt:ProfitLossForPeriodFromContinuingOperations contextRef="OneD" unitRef="INR" decimals="-3">50000000</in-capmkt:ProfitLossForPeriodFromContinuingOperations>
+ <in-capmkt:ProfitBeforeTax contextRef="OneD" unitRef="INR" decimals="-3">70000000</in-capmkt:ProfitBeforeTax>
  <in-capmkt:FinanceCosts contextRef="OneD" unitRef="INR" decimals="-3">10000000</in-capmkt:FinanceCosts>
- <in-capmkt:OperatingProfitLossForPeriodFromContinuingOperations contextRef="OneD" unitRef="INR" decimals="-3">100000000</in-capmkt:OperatingProfitLoss>
+ <in-capmkt:OperatingProfit contextRef="OneD" unitRef="INR" decimals="-3">100000000</in-capmkt:OperatingProfit>
  <in-capmkt:CashFlowsFromUsedInOperatingActivities contextRef="OneD" unitRef="INR" decimals="-3">60000000</in-capmkt:CashFlowsFromUsedInOperatingActivities>
  <in-capmkt:EquityAttributableToOwnersOfParent contextRef="N1D" unitRef="INR" decimals="-3">300000000</in-capmkt:EquityAttributableToOwnersOfParent>
  <in-capmkt:EquityAttributableToOwnersOfParent contextRef="Prior" unitRef="INR" decimals="-3">250000000</in-capmkt:EquityAttributableToOwnersOfParent>
  <in-capmkt:Assets contextRef="N1D" unitRef="INR" decimals="-3">500000000</in-capmkt:Assets>
  <in-capmkt:Borrowings contextRef="N1D" unitRef="INR" decimals="-3">100000000</in-capmkt:Borrowings>
  <in-capmkt:PaidUpValueOfEquityShareCapital contextRef="N1D" unitRef="INR" decimals="-3">50000000</in-capmkt:PaidUpValueOfEquityShareCapital>
- <in-capmkt:FaceValueOfEquityShareCapitalCapital contextRef="N1D" unitRef="INRPerShare" decimals="0">10</in-capmkt:FaceValueOfEquityShareCapital>
+ <in-capmkt:FaceValueOfEquityShareCapital contextRef="N1D" unitRef="INRPerShare" decimals="0">10</in-capmkt:FaceValueOfEquityShareCapital>
 </xbrli:xbrl>
 """
 
@@ -52,12 +52,13 @@ def test_extracts_quarter_and_normalizes_currency_to_crore():
     assert round(row["roe"],2)==18.18
     assert round(row["interest_coverage"],2)==8
     assert round(row["roce"],2)==20
+    assert row["paid_up_capital"]==5
+    assert row["face_value"]==10
 
 
-def test_rejects_missing_discrete_quarter_context():
-    xml=XML.replace(b"First Quarter",b"First Quarter")
-    row=extract_filing_fundamentals(xml, {
-        "symbol":"DEMO","period_end":"2025-06-30","relating_to":"First Quarter",
-        "consolidated":True,"xbrl_url":"https://example.com/demo.xml"
+def test_unlabelled_filing_can_select_discrete_quarter():
+    row=extract_filing_fundamentals(XML, {
+        "symbol":"DEMO","period_end":"2025-06-30","consolidated":True,
+        "xbrl_url":"https://example.com/demo.xml"
     })
     assert row["period_kind"]=="quarter"
