@@ -9,7 +9,7 @@ def test_missing_values_are_not_zero():
 def test_recent_complete_company_can_enter_research_queue():
     recent=(pd.Timestamp.now().normalize()-pd.Timedelta(days=90)).strftime("%Y-%m-%d")
     df=pd.DataFrame([{"symbol":"X","name":"Test","sector":"Industrials","close":100,"roe":18,"roce":20,
-      "debt_to_equity":.2,"pe":15,"pb":2,"period_end":recent}])
+      "debt_to_equity":.2,"pe":15,"pb":2,"margin_of_safety_pct":30,"valuation_status":"ATTRACTIVE_MARGIN_OF_SAFETY","period_end":recent}])
     assert screen_universe(df).companies.iloc[0].research_status=="VALUE_RESEARCH_CANDIDATE"
 
 def test_missing_critical_data_is_blocked():
