@@ -189,28 +189,57 @@ def _attach_source(base,frame,override=False):
 
 
 def _derive_market_valuation(frame):
+    """Calculate multiples only from a sourced market cap or reported shares.
+
+    Paid-up equity capital divided by face value is not a safe share-count
+    proxy: bonus issues, buybacks, partly-paid shares and multiple classes can
+    make it wrong. Retain supplied P/E/P/B, but never manufacture them from
+    that shortcut.
+    """
     base=frame.copy()
     close=pd.to_numeric(base.get("close",pd.Series(index=base.index,dtype=float)),errors="coerce")
-    capital=pd.to_numeric(base.get("paid_up_capital",pd.Series(index=base.index,dtype=float)),errors="coerce")
-    face=pd.to_numeric(base.get("face_value",pd.Series(index=base.index,dtype=float)),errors="coerce")
-    shares=(capital*10_000_000/face).where((capital>0)&(face>0))
-    market_cap=close*shares/10_000_000
-    if "market_cap_cr" not in base: base["market_cap_cr"]=market_cap
-    else: base["market_cap_cr"]=base["market_cap_cr"].where(base["market_cap_cr"].notna(),market_cap)
+    shares=pd.to_numeric(base.get("shares_outstanding_cr",pd.Series(index=base.index,dtype=float)),errors="coerce")
+    shares_source=base.get("shares_outstanding_source",pd.Series("",index=base.index)).astype("string").fillna("").str.strip()
+    shares_verified=shares.notna() & (shares>0) & shares_source.ne("")
+    reported_market_cap=pd.to_numeric(base.get("market_cap_cr",pd.Series(index=base.index,dtype=float)),errors="coerce")
+    calculated_market_cap=(close*shares).where(shares_verified & close.gt(0))
+    if "market_cap_cr" not in base:
+        base["market_cap_cr"]=reported_market_cap.where(reported_market_cap.notna(),calculated_market_cap)
+    else:
+        base["market_cap_cr"]=reported_market_cap.where(reported_market_cap.notna(),calculated_market_cap)
+    if "market_cap_source" not in base:
+        base["market_cap_source"]=pd.Series(pd.NA,index=base.index,dtype="object")
+    base["market_cap_source"]=base["market_cap_source"].where(
+        base["market_cap_source"].notna() & (base["market_cap_source"].astype(str)!=""),
+        pd.Series(
+            ["Reported market capitalisation" if pd.notna(v) else
+             ("EOD price × reported shares outstanding" if pd.notna(c) else None)
+             for v,c in zip(reported_market_cap,calculated_market_cap)],
+            index=base.index,dtype="object"
+        )
+    )
+    market_cap=pd.to_numeric(base["market_cap_cr"],errors="coerce")
     net_profit=pd.to_numeric(base.get("net_profit",pd.Series(index=base.index,dtype=float)),errors="coerce")
     equity=pd.to_numeric(base.get("equity",pd.Series(index=base.index,dtype=float)),errors="coerce")
     period_kind=base.get("period_kind",pd.Series("",index=base.index)).astype("string").str.lower()
     earnings_period_ok=period_kind.str.contains("annual|ttm",regex=True,na=False)
-    # Quarterly PAT/EPS are never multiplied into an apparent annual P/E.
-    calculated_pe=(market_cap/net_profit.where(net_profit>0)).where(earnings_period_ok)
+    calculated_pe=(market_cap/net_profit.where(net_profit>0)).where(earnings_period_ok & market_cap.gt(0))
     calculated_pb=market_cap/equity.where(equity>0)
-    if "pe" not in base: base["pe"]=calculated_pe
-    else: base["pe"]=base["pe"].where(base["pe"].notna(),calculated_pe)
-    if "pb" not in base: base["pb"]=calculated_pb
-    else: base["pb"]=base["pb"].where(base["pb"].notna(),calculated_pb)
+    if "pe" not in base:
+        base["pe"]=calculated_pe
+    else:
+        base["pe"]=pd.to_numeric(base["pe"],errors="coerce").where(
+            pd.to_numeric(base["pe"],errors="coerce").notna(),calculated_pe
+        )
+    if "pb" not in base:
+        base["pb"]=calculated_pb
+    else:
+        existing_pb=pd.to_numeric(base["pb"],errors="coerce")
+        base["pb"]=existing_pb.where(existing_pb.notna(),calculated_pb)
     eps=pd.to_numeric(base.get("basic_eps",pd.Series(index=base.index,dtype=float)),errors="coerce")
-    eps_pe=(close/eps.where(eps>0)).where(earnings_period_ok)
-    base["pe"]=base["pe"].where(base["pe"].notna(),eps_pe)
+    eps_pe=(close/eps.where(eps>0)).where(earnings_period_ok & close.gt(0))
+    existing_pe=pd.to_numeric(base.get("pe",pd.Series(index=base.index,dtype=float)),errors="coerce")
+    base["pe"]=existing_pe.where(existing_pe.notna(),eps_pe)
     return base
 
 
