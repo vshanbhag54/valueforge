@@ -230,7 +230,7 @@ def attach_market_prices(master, market):
         qkey=key+"_quote"
         if qkey in merged:
             if key in merged:
-                if key in {"name","isin","series","sector"}:
+                if key in {"name","symbol","isin","series","sector"}:
                     merged[key]=merged[key].where(merged[key].notna() & (merged[key].astype(str)!=""),merged[qkey])
                 else:
                     merged[key]=merged[qkey].where(merged[qkey].notna(),merged[key])
