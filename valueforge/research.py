@@ -56,6 +56,7 @@ def _ttm_xbrl_fundamentals(history):
         latest["period_kind"]="TTM from 4 discrete quarters"
         latest["period_end"]=dates[-1].strftime("%Y-%m-%d")
         latest["ttm_quarters"]=4
+        latest["ttm_period_start"]=dates[0].strftime("%Y-%m-%d")
         if latest.get("sales") and latest.get("sales")>0:
             if pd.notna(latest.get("operating_profit")):
                 latest["operating_margin"]=latest["operating_profit"]/latest["sales"]*100
@@ -65,6 +66,15 @@ def _ttm_xbrl_fundamentals(history):
         pbt=latest.get("profit_before_tax"); finance=latest.get("finance_cost")
         if pd.notna(pbt) and pd.notna(finance) and finance>0:
             latest["interest_coverage"]=(pbt+finance)/finance
+        # Recalculate return ratios from TTM earnings and balance-sheet capital;
+        # never reuse a single-quarter ROE/ROCE in a TTM record.
+        equity=pd.to_numeric(pd.Series([latest.get("equity")]),errors="coerce").iloc[0]
+        prior_equity=pd.to_numeric(pd.Series([q.iloc[-2].get("equity")]),errors="coerce").iloc[0]
+        debt=pd.to_numeric(pd.Series([latest.get("total_debt")]),errors="coerce").iloc[0]
+        if pd.notna(profit) and pd.notna(equity) and pd.notna(prior_equity) and equity>0 and prior_equity>0:
+            latest["roe"]=profit/((equity+prior_equity)/2)*100
+        if pd.notna(pbt) and pd.notna(finance) and pd.notna(equity) and pd.notna(debt) and equity+debt>0:
+            latest["roce"]=(pbt+finance)/(equity+debt)*100
         latest["source_label"]="Exchange XBRL filings (TTM derived from 4 quarters)"
         ttm.append(latest)
     return pd.DataFrame(ttm)
@@ -157,7 +167,7 @@ def merge_market_and_fundamentals(market,fundamentals):
     # exchange XBRL remains the auditable source for all other metrics.
     base=_attach_source(base,manual,override=True)
     base=_derive_market_valuation(base)
-    base["fundamentals_match"]=base.get("pe",pd.Series(index=base.index,dtype=float)).notna() | base.get("roe",pd.Series(index=base.index,dtype=float)).notna()
+    base["fundamentals_match"]=base.get("period_end",pd.Series(index=base.index,dtype=object)).notna()
     return base
 
 
