@@ -229,6 +229,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
 
     if not batch:
         status["pending_after_batch"] = len(pending)
+        status["processed_filing_keys"] = []
         status["state"] = "NO_PENDING_FILINGS" if not pending else "BATCH_LIMIT_ZERO"
         Path("data/live/filings_status.json").parent.mkdir(parents=True, exist_ok=True)
         Path("data/live/filings_status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
@@ -278,6 +279,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
                 "audited": record.audited,
             })
             normalized["filing_key"] = filing_key
+            normalized["parser_version"] = int(PARSER_VERSION)
             extracted.append(normalized)
             new_registry_rows.append({
                 "filing_key": filing_key, "symbol": record.symbol, "company": record.company,
@@ -325,6 +327,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
 
     # Temporary XBRL payloads are deliberately not retained in Git.
     shutil.rmtree(cache_dir, ignore_errors=True)
+    status["processed_filing_keys"] = [row["filing_key"] for row in new_registry_rows]
     current_processed = _registry_keys(pd.read_csv(REGISTRY_PATH)) if REGISTRY_PATH.exists() else set()
     status["pending_after_batch"] = sum(
         1 for record in queue.records
