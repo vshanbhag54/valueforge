@@ -5,7 +5,7 @@ import json, re
 import pandas as pd
 
 DATASET_ID="tejhq/indian-markets"
-PATTERN=re.compile(r"^(nse|bse)/year=(\\d{4})/month=(\\d{2})/date=(\\d{4}-\\d{2}-\\d{2})\\.parquet$")
+PATTERN=re.compile(r"^(nse|bse)/year=(\d{4})/month=(\d{2})/date=(\d{4}-\d{2}-\d{2})\.parquet$")
 
 class MarketDataError(RuntimeError): pass
 
