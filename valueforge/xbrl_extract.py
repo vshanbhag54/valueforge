@@ -27,6 +27,10 @@ INSTANT_ALIASES = {
     "long_debt": ("BorrowingsNoncurrent", "NonCurrentBorrowings", "LongTermBorrowings"),
     "paid_up_capital": ("PaidUpValueOfEquityShareCapital", "PaidUpEquityShareCapital", "EquityShareCapital"),
     "face_value": ("FaceValueOfEquityShareCapital", "FaceValueOfEquityShare", "FaceValueOfEquityShares", "FaceValuePerShare"),
+    "reported_debt_to_equity": ("DebtEquityRatio",),
+    "reported_interest_coverage": ("InterestServiceCoverageRatio",),
+    "reported_roe": ("ReturnOnEquity",),
+    "reported_roce": ("ReturnOnCapitalEmployed",),
 }
 
 
@@ -202,15 +206,23 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
     pbt = out.get("profit_before_tax")
     op_profit = out.get("operating_profit")
 
-    if debt is not None and equity and equity > 0:
+    if out.get("reported_debt_to_equity") is not None:
+        out["debt_to_equity"] = out["reported_debt_to_equity"]
+    elif debt is not None and equity and equity > 0:
         out["debt_to_equity"] = debt / equity
     if ocf is not None and profit not in (None, 0):
         out["ocf_to_net_profit"] = ocf / profit
-    if profit is not None and equity and equity > 0 and prior_equity and prior_equity > 0:
+    if out.get("reported_roe") is not None:
+        out["roe"] = out["reported_roe"]
+    elif profit is not None and equity and equity > 0 and prior_equity and prior_equity > 0:
         out["roe"] = profit / ((equity + prior_equity) / 2) * 100
-    if pbt is not None and finance and finance > 0:
+    if out.get("reported_interest_coverage") is not None:
+        out["interest_coverage"] = out["reported_interest_coverage"]
+    elif pbt is not None and finance and finance > 0:
         out["interest_coverage"] = (pbt + finance) / finance
-    if pbt is not None and finance is not None and equity and debt is not None and equity + debt > 0:
+    if out.get("reported_roce") is not None:
+        out["roce"] = out["reported_roce"]
+    elif pbt is not None and finance is not None and equity and debt is not None and equity + debt > 0:
         out["roce"] = (pbt + finance) / (equity + debt) * 100
     if op_profit is not None and sales and sales > 0:
         out["operating_margin"] = op_profit / sales * 100
