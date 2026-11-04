@@ -1,14 +1,19 @@
 name: ValueForge daily market refresh and research
 on:
+  push:
+    branches: [main]
+    paths:
+      - "valueforge/research.py"
+      - ".github/workflows/daily-research.yml"
   schedule:
     # 21:15 IST weekdays, after TejHQ's usual EOD data publication window.
     - cron: "45 15 * * 1-5"
   workflow_dispatch:
     inputs:
       filing_lookback_days:
-        description: "Filing discovery lookback in days (1825 queues roughly five years)"
+        description: "Filing discovery lookback in days (2555 queues roughly seven years)"
         required: false
-        default: "1825"
+        default: "2555"
         type: string
       filing_batch_limit:
         description: "Maximum XBRL filings to fetch and parse in this run"
@@ -23,7 +28,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_MODEL: gemini-2.5-flash-lite
@@ -48,7 +53,19 @@ jobs:
             --limit "$VALUEFORGE_FILINGS_LIMIT" \
             --workers 4
       - name: Refresh EOD universe and run fundamentals-backed research scan
-        run: python -m valueforge.cli refresh-and-scan
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            echo "Market refresh and scan attempt $attempt/3"
+            if python -m valueforge.cli refresh-and-scan; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "Market refresh/scan failed after three attempts."
+          exit 1
       - name: Commit compact research state (never raw price snapshots or raw filings)
         run: |
           git config user.name "github-actions[bot]"
