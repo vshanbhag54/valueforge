@@ -209,7 +209,7 @@ declare
     table_name text;
 begin
     foreach table_name in array array[
-        'companies','securities','market_prices','filings','financial_statements',
+        'schema_version','companies','securities','market_prices','filings','financial_statements',
         'ingestion_runs','research_runs','research_results','agent_reports',
         'watchlists','watchlist_items','paper_portfolios','paper_transactions',
         'data_quality_issues'
