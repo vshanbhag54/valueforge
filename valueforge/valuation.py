@@ -63,8 +63,10 @@ def _value_row(row):
     # Never infer outstanding shares from paid-up capital / face value:
     # bonus issues, buybacks, multiple share classes and corporate actions
     # can make that proxy materially wrong. Require a reported share count.
-    shares_cr = _finite(row.get("shares_outstanding_cr"))
     shares_source = row.get("shares_outstanding_source")
+    shares_cr = _finite(row.get("shares_outstanding_cr")) if shares_source and str(shares_source).strip() else None
+    period_kind = str(row.get("period_kind") or "").lower()
+    annual_cashflow = "annual" in period_kind or "ttm" in period_kind
     growth = _forecast_growth(row)
     values = {}
     for name, discount in DISCOUNT_SCENARIOS.items():
@@ -76,6 +78,8 @@ def _value_row(row):
     mos = (1 - price / base) * 100 if price is not None and price > 0 and base is not None and base > 0 else None
     if price is None or price <= 0:
         status = "NO_CURRENT_PRICE"
+    elif not annual_cashflow:
+        status = "ANNUAL_OR_TTM_FCF_REQUIRED"
     elif fcf is None or fcf <= 0:
         status = "FCF_UNAVAILABLE_OR_NON_POSITIVE"
     elif shares_cr is None or shares_cr <= 0:
