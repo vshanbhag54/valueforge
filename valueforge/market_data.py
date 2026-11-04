@@ -37,6 +37,34 @@ def _read(path):
     try: return pd.read_parquet(path)
     except Exception as exc: raise MarketDataError(f"Parquet read failed for {path.name}: {exc}") from exc
 
+def _read_latest_day(path, today):
+    """Use Parquet predicate pushdown so small web instances do not materialize a full year."""
+    try:
+        import pyarrow as pa
+        import pyarrow.dataset as ds
+        dataset=ds.dataset(path,format="parquet")
+        if "date" not in dataset.schema.names:
+            raise MarketDataError(f"Missing date column in {path.name}.")
+        # Only the date column is materialized for discovery; market rows are filtered at scan time.
+        raw_dates=dataset.to_table(columns=["date"])["date"].to_pylist()
+        parsed=pd.to_datetime(pd.Series(raw_dates),errors="coerce")
+        valid=parsed[parsed.notna() & (parsed.dt.date<=today)]
+        if valid.empty:
+            raise MarketDataError(f"No dated rows at or before {today} in {path.name}.")
+        latest_day=valid.dt.date.max()
+        index=valid.index[valid.dt.date==latest_day][0]
+        raw_value=raw_dates[index]
+        field_type=dataset.schema.field("date").type
+        if pa.types.is_timestamp(field_type):
+            raw_value=pd.Timestamp(raw_value).to_pydatetime()
+        scalar=pa.scalar(raw_value,type=field_type)
+        table=dataset.to_table(filter=ds.field("date")==scalar)
+        return table.to_pandas(),latest_day
+    except MarketDataError:
+        raise
+    except Exception as exc:
+        raise MarketDataError(f"Could not selectively read latest rows from {path.name}: {exc}") from exc
+
 def _as_date(series):
     return pd.to_datetime(series,errors="coerce").dt.date
 
@@ -47,16 +75,14 @@ def download_latest_market_data(today=None,max_age_days=10):
     frames=[]; source_files=[]; dates={}; metric_files=[]
     for ex in ("nse","bse"):
         price_file=latest_annual_partition(files,ex,today)
-        price=_read(_download(price_file))
+        price,latest_day=_read_latest_day(_download(price_file),today)
         if "date" not in price or "symbol" not in price:
             raise MarketDataError(f"Unexpected schema in {price_file}; required date and symbol columns.")
         price["date"]=_as_date(price["date"])
-        price=price[price["date"].notna() & (price["date"]<=today)]
         allowed={"EQ","BE","BZ"} if ex=="nse" else {"A","B","T"}
         if "series" in price:
             price=price[price["series"].astype(str).str.upper().isin(allowed)]
         if price.empty: raise MarketDataError(f"{ex.upper()} annual file had no supported equity rows.")
-        latest_day=price["date"].max()
         age=(today-latest_day).days
         if age>max_age_days:
             raise MarketDataError(f"{ex.upper()} latest EOD date is {latest_day} ({age} days old); refusing stale market data.")
