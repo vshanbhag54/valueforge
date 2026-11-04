@@ -6,13 +6,24 @@ import pandas as pd
 _ISIN_RE = re.compile(r"^IN[A-Z0-9]{10}$")
 
 
+def _text(value):
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    return str(value)
+
+
 def normalize_isin(value):
-    token = str(value or "").strip().upper()
+    token = _text(value).strip().upper()
     return token if _ISIN_RE.fullmatch(token) else None
 
 
 def normalize_symbol(value):
-    token = str(value or "").strip().upper()
+    token = _text(value).strip().upper()
     if token in {"", "NAN", "NONE", "<NA>"}:
         return None
     token = re.sub(r"^(NSE|BSE)[:_-]", "", token)
@@ -21,14 +32,14 @@ def normalize_symbol(value):
 
 
 def normalize_code(value):
-    token = str(value or "").strip().upper()
+    token = _text(value).strip().upper()
     if token in {"", "NAN", "NONE", "<NA>"}:
         return None
     return re.sub(r"\.0$", "", token)
 
 
 def normalize_company_name(value):
-    token = re.sub(r"[^A-Z0-9]+", " ", str(value or "").upper()).strip()
+    token = re.sub(r"[^A-Z0-9]+", " ", _text(value).upper()).strip()
     tokens = [x for x in token.split() if x not in {
         "LIMITED", "LTD", "PRIVATE", "PVT", "PLC", "THE", "COMPANY", "CO"
     }]
