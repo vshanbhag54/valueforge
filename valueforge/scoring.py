@@ -69,6 +69,13 @@ def screen_universe(frame):
         if pd.isna(p): return "PERIOD_NOT_VERIFIED"
         if (pd.Timestamp.now().normalize()-p.normalize()).days>450: return "FUNDAMENTALS_STALE"
         if pd.isna(r.get("pe")) or pd.isna(r.get("roe")) or pd.isna(r.get("debt_to_equity")): return "FUNDAMENTALS_INCOMPLETE"
+        qstatus=str(r.get("financial_quality_status") or "")
+        if qstatus!="VALIDATED":
+            if qstatus=="STALE": return "FUNDAMENTALS_STALE"
+            if qstatus=="IDENTITY_UNVERIFIED": return "IDENTITY_UNVERIFIED"
+            if qstatus=="MANUAL_REVIEW_REQUIRED": return "MANUAL_DATA_REVIEW"
+            if qstatus=="REVIEW_REQUIRED": return "FINANCIAL_DATA_REVIEW"
+            return "FUNDAMENTALS_INCOMPLETE"
         if pd.notna(r.get("net_profit")) and r.get("net_profit")<=0: return "LOSS_MAKING_REVIEW"
         if pd.notna(r.get("promoter_pledge_pct")) and r.get("promoter_pledge_pct")>=25: return "GOVERNANCE_REVIEW"
         if pd.notna(r.get("debt_to_equity")) and r.get("debt_to_equity")>2: return "LEVERAGE_REVIEW"
