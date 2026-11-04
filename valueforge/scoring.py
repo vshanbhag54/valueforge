@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import math
 import pandas as pd
 
-FIELDS=["pe","pb","roe","roce","debt_to_equity","interest_coverage","operating_margin","ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct","net_profit","sales","total_debt","cash","equity","ocf","fcf"]
+FIELDS=["close","pe","pb","roe","roce","debt_to_equity","interest_coverage","operating_margin","ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct","net_profit","sales","total_debt","cash","equity","ocf","fcf"]
 @dataclass
 class ScreeningResult:
     companies: pd.DataFrame
@@ -44,9 +44,12 @@ def score_company(r):
     coverage=sum(not math.isnan(number(r.get(k))) for k in ("pe","roe","roce","debt_to_equity","ocf_to_net_profit","promoter_pledge_pct"))
     return (round(score,1) if not math.isnan(score) else float("nan"),int(coverage))
 
-def financial_sector(sector):
+def financial_sector(sector,name=None):
     s=str(sector or "").lower()
-    return any(x in s for x in ("bank","nbfc","finance","financial","insurance","lending"))
+    n=str(name or "").lower()
+    sector_terms=("bank","nbfc","finance","financial","insurance","lending","asset management","microfinance","credit")
+    name_terms=("bank","finance","financial","insurance","microfinance","credit","housing finance","asset management")
+    return any(x in s for x in sector_terms) or any(x in n for x in name_terms)
 
 def screen_universe(frame):
     df=frame.copy()
@@ -56,7 +59,8 @@ def screen_universe(frame):
     pairs=df.apply(lambda r:score_company(r.to_dict()),axis=1)
     df["value_score"]=[x[0] for x in pairs]; df["fundamental_coverage"]=[x[1] for x in pairs]
     def status(r):
-        if financial_sector(r.get("sector")): return "SECTOR_MODEL_REQUIRED"
+        if pd.isna(r.get("close")): return "PRICE_UNAVAILABLE"
+        if financial_sector(r.get("sector"),r.get("name")): return "SECTOR_MODEL_REQUIRED"
         if r["fundamental_coverage"]<4: return "FUNDAMENTALS_INCOMPLETE"
         if pd.isna(r.get("period_end")): return "PERIOD_NOT_VERIFIED"
         p=pd.to_datetime(r.get("period_end"),errors="coerce")
