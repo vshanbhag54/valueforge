@@ -120,23 +120,28 @@ def _latest_xbrl(history):
         source=annual if not annual.empty else history
         chosen=latest_fundamentals(source)
 
-    # 5-year growth is derived only from annual filings spanning at least four
-    # years. Never annualize a single quarter or label a 2-year CAGR as 5-year.
+    # Five-year growth requires six annual statements (five full intervals)
+    # with no missing/abnormally spaced year. A two- or four-year CAGR is not
+    # mislabeled as five-year growth.
     if not chosen.empty and not annual.empty:
         annual=annual.copy()
         annual["_period"]=pd.to_datetime(annual.get("period_end"),errors="coerce")
+        annual["_asof"]=pd.to_datetime(annual.get("data_as_of"),errors="coerce")
         annual["_company_key"]=_company_key(annual)
         growth={}
         for company_key,group in annual.groupby("_company_key",dropna=False):
-            group=group.dropna(subset=["_period"]).sort_values("_period").drop_duplicates("_period",keep="last")
-            if len(group)<2: continue
-            latest=group.iloc[-1]
-            candidates=group[group["_period"] <= latest["_period"]-pd.Timedelta(days=4*365)]
-            candidates=candidates[candidates["_period"] >= latest["_period"]-pd.Timedelta(days=7*365)]
-            if candidates.empty: continue
-            earliest=candidates.iloc[-1]
-            years=(latest["_period"]-earliest["_period"]).days/365.25
-            if years<4: continue
+            group=group.dropna(subset=["_period"]).sort_values(
+                ["_period","_asof"],na_position="first"
+            ).drop_duplicates("_period",keep="last")
+            if len(group)<6: continue
+            sample=group.tail(6)
+            dates=sample["_period"].tolist()
+            gaps=[(dates[i]-dates[i-1]).days for i in range(1,6)]
+            years=(dates[-1]-dates[0]).days/365.25
+            if any(g<300 or g>430 for g in gaps) or not 4.5<=years<=5.5:
+                continue
+            earliest=sample.iloc[0]
+            latest=sample.iloc[-1]
             item={"sales_cagr_years":round(years,2),"profit_cagr_years":round(years,2)}
             for field,target in [("sales","sales_cagr_5y"),("net_profit","profit_cagr_5y")]:
                 begin=pd.to_numeric(pd.Series([earliest.get(field)]),errors="coerce").iloc[0]
