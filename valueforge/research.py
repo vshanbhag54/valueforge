@@ -8,6 +8,8 @@ from .market_data import load_market_snapshot
 from .scoring import screen_universe
 from .universe import attach_market_prices, load_security_master
 from .valuation import apply_intrinsic_valuation
+from .identity import resolve_fundamental_rows
+from .financial_quality import apply_financial_quality
 
 FUNDAMENTALS_PATH=Path("data/fundamentals/company_fundamentals.csv")
 XBRL_FUNDAMENTALS_PATH=Path("data/fundamentals/xbrl_fundamentals.csv")
@@ -161,22 +163,22 @@ def _latest_xbrl(history):
 
 
 def _attach_source(base,frame,override=False):
-    if frame.empty: return base
-    f=latest_fundamentals(frame)
+    if frame.empty:
+        return base
+    f=latest_fundamentals(frame).reset_index(drop=True)
+    indexes,methods=resolve_fundamental_rows(base,f)
+    previous=base.get("fundamental_match_method",pd.Series("UNMATCHED",index=base.index)).astype("string")
+    selected_methods=pd.Series(methods,index=base.index,dtype="string")
+    base["fundamental_match_method"]=selected_methods.where(selected_methods!="UNMATCHED",previous)
+
+    identity_fields={"isin","symbol","security_code","name","exchange","_company_key"}
     for field in f.columns:
-        if field in {"isin","symbol","security_code","name","exchange","_company_key"}: continue
-        mapped=pd.Series(index=base.index,dtype=object)
-        if "isin" in f and "isin" in base:
-            part=f.dropna(subset=["isin"]).drop_duplicates("isin",keep="last")
-            mapped=base["isin"].astype("string").map(part.set_index("isin")[field].to_dict())
-        if "symbol" in f and "symbol" in base:
-            part=f.dropna(subset=["symbol"]).drop_duplicates("symbol",keep="last")
-            fallback=base["symbol"].astype(str).str.upper().map(part.set_index("symbol")[field].to_dict())
-            mapped=mapped.where(mapped.notna(),fallback)
-        if "security_code" in f and "security_code" in base:
-            part=f.dropna(subset=["security_code"]).drop_duplicates("security_code",keep="last")
-            fallback=base["security_code"].astype("string").map(part.set_index("security_code")[field].to_dict())
-            mapped=mapped.where(mapped.notna(),fallback)
+        if field in identity_fields:
+            continue
+        values=[]
+        for idx in indexes:
+            values.append(f.iloc[idx].get(field) if idx >= 0 else pd.NA)
+        mapped=pd.Series(values,index=base.index,dtype="object")
         if field not in base:
             base[field]=mapped
         elif override:
@@ -216,7 +218,9 @@ def merge_market_and_fundamentals(market,fundamentals):
     base=market.copy()
     if fundamentals.empty:
         base["source_label"]="Market data only"
+        base["fundamental_match_method"]="UNMATCHED"
         base["fundamentals_match"]=False
+        base=apply_financial_quality(base)
         return base
     f=fundamentals.copy()
     labels=f.get("source_label",pd.Series("",index=f.index)).astype("string").str.lower()
@@ -228,8 +232,12 @@ def merge_market_and_fundamentals(market,fundamentals):
     # exchange XBRL remains the auditable source for all other metrics.
     base=_attach_source(base,manual,override=True)
     base=_derive_market_valuation(base)
+    base["fundamentals_match"]=(
+        base.get("period_end",pd.Series(index=base.index,dtype=object)).notna()
+        & base.get("fundamental_match_method",pd.Series("UNMATCHED",index=base.index)).ne("UNMATCHED")
+    )
+    base=apply_financial_quality(base)
     base=apply_intrinsic_valuation(base)
-    base["fundamentals_match"]=base.get("period_end",pd.Series(index=base.index,dtype=object)).notna()
     return base
 
 
@@ -294,6 +302,9 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "eod_price_available":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum()),
       "fundamental_rows":int(len(fundamentals)),
       "matched_rows":int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum()),
+      "validated_financial_rows":int(merged.get("financial_quality_status",pd.Series(dtype=object)).eq("VALIDATED").sum()),
+      "financial_quality_by_status":merged.get("financial_quality_status",pd.Series(dtype=object)).value_counts().to_dict(),
+      "fundamental_match_methods":merged.get("fundamental_match_method",pd.Series(dtype=object)).value_counts().to_dict(),
       "fundamentals_match_pct":round(100*int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum())/max(len(merged),1),2),
       "unpriced_listed_rows":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("NO_EOD_PRICE").sum()),
       "market_date":latest_market_snapshot_date(market),
