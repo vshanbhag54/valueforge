@@ -95,3 +95,16 @@ The application now includes `database/schema.sql` and `valueforge/db.py`. When 
 Without the secret, the database adapter returns `NOT_CONFIGURED` and the CSV-based pipeline continues. If configured but the schema is missing or unreachable, the scan records `database.status=ERROR` in its status report; it does not discard the CSV research checkpoint.
 
 The current connected Supabase account did not have a project when this integration was added, so no database has been provisioned or live connection verified yet. The SQL and Python adapter are committed; the live project, schema application and connection secret are deployment steps still required.
+
+
+## Sector-specific financial diligence
+
+ValueForge routes banks, NBFCs, insurance companies, asset managers and brokers away from the industrial-company value screen. The dashboard shows a sector diligence queue with required metrics and coverage gaps:
+
+- Banks: ROE, ROA, NIM, GNPA, NNPA, CRAR and cost-to-income.
+- NBFCs: ROE, ROA, GNPA, NNPA, capital adequacy, leverage and AUM growth.
+- Insurers: ROE, solvency, claims ratio and 13-month persistency.
+- Asset managers: ROE, operating margin, AUM growth and net flows.
+- Brokers: ROE, operating margin, client-asset growth and net cash.
+
+A sector metric set is marked complete only with a current reporting period and an HTTP(S) source reference. A complete checklist is labelled `SECTOR_RESEARCH_REVIEW`, never a buy signal. Sector-specific intrinsic valuation and automated primary-source collection for these metrics are still pending.
