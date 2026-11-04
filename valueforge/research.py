@@ -70,17 +70,21 @@ def _ttm_xbrl_fundamentals(history):
         # Recalculate return ratios from TTM earnings and balance-sheet capital;
         # never reuse a single-quarter ROE/ROCE in a TTM record.
         equity=pd.to_numeric(pd.Series([latest.get("equity")]),errors="coerce").iloc[0]
-        prior_equity=pd.to_numeric(pd.Series([q.iloc[-2].get("equity")]),errors="coerce").iloc[0]
         debt=pd.to_numeric(pd.Series([latest.get("total_debt")]),errors="coerce").iloc[0]
-        prior_debt=pd.to_numeric(pd.Series([q.iloc[-2].get("total_debt")]),errors="coerce").iloc[0]
-        if pd.notna(profit) and pd.notna(equity) and pd.notna(prior_equity) and equity>0 and prior_equity>0:
-            latest["roe"]=profit/((equity+prior_equity)/2)*100
-        # ROCE uses average opening/closing capital employed, not only closing capital.
+        # A TTM return needs the balance-sheet opening point immediately before
+        # the first of the four included quarters. Do not approximate it with
+        # the third quarter's closing balance.
+        opening=group.iloc[-5] if len(group)>=5 else None
+        opening_equity=pd.to_numeric(pd.Series([opening.get("equity") if opening is not None else None]),errors="coerce").iloc[0]
+        opening_debt=pd.to_numeric(pd.Series([opening.get("total_debt") if opening is not None else None]),errors="coerce").iloc[0]
+        if pd.notna(profit) and pd.notna(equity) and pd.notna(opening_equity) and equity>0 and opening_equity>0:
+            latest["roe"]=profit/((equity+opening_equity)/2)*100
+        # ROCE uses average opening/closing capital employed for the full TTM.
         if (pd.notna(pbt) and pd.notna(finance) and pd.notna(equity) and pd.notna(debt)
-                and pd.notna(prior_equity) and pd.notna(prior_debt)):
+                and pd.notna(opening_equity) and pd.notna(opening_debt)):
             current_capital=equity+debt
-            prior_capital=prior_equity+prior_debt
-            average_capital=(current_capital+prior_capital)/2
+            opening_capital=opening_equity+opening_debt
+            average_capital=(current_capital+opening_capital)/2
             if average_capital>0:
                 latest["roce"]=(pbt+finance)/average_capital*100
         latest["source_label"]="Exchange XBRL filings (TTM derived from 4 quarters)"
