@@ -1,29 +1,29 @@
 {
-  "run_at_utc": "2026-11-04T09:20:53.384483+00:00",
+  "run_at_utc": "2026-11-04T09:22:09.501311+00:00",
   "lookback_days": 45,
   "batch_limit": 60,
   "discovery": {
-    "nse": 21,
+    "nse": 101,
     "bse_integrated": 29,
-    "usable_xbrl": 18,
-    "new_queue_records": 1
+    "usable_xbrl": 97,
+    "new_queue_records": 78
   },
   "discovery_errors": {},
-  "queue_total": 19,
-  "pending_before_batch": 19,
-  "batch_selected": 19,
-  "downloaded": 15,
-  "parsed": 13,
+  "queue_total": 97,
+  "pending_before_batch": 97,
+  "batch_selected": 60,
+  "downloaded": 60,
+  "parsed": 58,
   "parse_failed": 2,
-  "fetch_failed": 4,
+  "fetch_failed": 0,
   "fetch_stats": {
-    "total": 19,
-    "downloaded": 15,
+    "total": 60,
+    "downloaded": 60,
     "skipped_already_ok": 0,
     "no_xbrl_link": 0,
     "skipped_standalone": 0,
-    "failed": 4
+    "failed": 0
   },
-  "pending_after_batch": 0,
-  "state": "COMPLETED"
+  "pending_after_batch": 97,
+  "state": "COMPLETED_WITH_ERRORS"
 }
