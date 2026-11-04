@@ -13,7 +13,7 @@ QUEUE_PATH = Path("data/fundamentals/xbrl_filing_queue.jsonl")
 REGISTRY_PATH = Path("data/fundamentals/processed_filings.csv")
 FUNDAMENTALS_PATH = Path("data/fundamentals/xbrl_fundamentals.csv")
 BACKFILL_STATE_PATH = Path("data/fundamentals/backfill_state.json")
-PARSER_VERSION = "6"
+PARSER_VERSION = "7"
 INITIAL_BACKFILL_DAYS = 1825
 
 
