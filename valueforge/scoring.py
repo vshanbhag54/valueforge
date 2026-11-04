@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import math
 import pandas as pd
 
-FIELDS=["close","pe","pb","roe","roce","debt_to_equity","interest_coverage","operating_margin","ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct","net_profit","sales","total_debt","cash","equity","ocf","fcf"]
+FIELDS=["close","pe","pb","roe","roce","debt_to_equity","interest_coverage","operating_margin","ocf_to_net_profit","sales_cagr_5y","profit_cagr_5y","promoter_pledge_pct","promoter_holding_pct","net_profit","sales","total_debt","cash","equity","ocf","fcf","margin_of_safety_pct"]
 @dataclass
 class ScreeningResult:
     companies: pd.DataFrame
@@ -27,6 +27,8 @@ def score_company(r):
     if not math.isnan(pe) and pe>0: value.append(scale(pe,6,30,True) if pe>=6 else 55.0)
     pb=number(r.get("pb"))
     if not math.isnan(pb) and pb>0: value.append(scale(pb,.7,5,True) if pb>=.7 else 60.0)
+    mos=scale(r.get("margin_of_safety_pct"),0,40)
+    if not math.isnan(mos): value.append(mos)
     for k,lo,hi in [("roe",8,22),("roce",8,24),("operating_margin",5,25),("sales_cagr_5y",0,20),("profit_cagr_5y",0,25)]:
         v=scale(r.get(k),lo,hi)
         if not math.isnan(v): quality.append(v)
@@ -70,9 +72,17 @@ def screen_universe(frame):
         if pd.notna(r.get("net_profit")) and r.get("net_profit")<=0: return "LOSS_MAKING_REVIEW"
         if pd.notna(r.get("promoter_pledge_pct")) and r.get("promoter_pledge_pct")>=25: return "GOVERNANCE_REVIEW"
         if pd.notna(r.get("debt_to_equity")) and r.get("debt_to_equity")>2: return "LEVERAGE_REVIEW"
-        if r["value_score"]>=65: return "VALUE_RESEARCH_CANDIDATE"
-        if r["value_score"]>=50: return "VALUE_WATCHLIST"
-        return "NOT_QUALIFIED"
+        mos=number(r.get("margin_of_safety_pct"))
+        valuation_status=str(r.get("valuation_status") or "")
+        if math.isnan(mos) or valuation_status not in {
+            "ATTRACTIVE_MARGIN_OF_SAFETY","WATCH_MARGIN_OF_SAFETY",
+            "LIMITED_MARGIN_OF_SAFETY","ABOVE_BASE_DCF_VALUE"
+        }:
+            return "INTRINSIC_VALUE_UNAVAILABLE"
+        if r["value_score"]>=65 and mos>=25: return "VALUE_RESEARCH_CANDIDATE"
+        if r["value_score"]>=50 and mos>=10: return "VALUE_WATCHLIST"
+        if mos<0: return "ABOVE_INTRINSIC_VALUE"
+        return "NO_MARGIN_OF_SAFETY"
     df["research_status"]=df.apply(status,axis=1)
     df["is_price_only"]=df["pe"].isna()
     counts=df["research_status"].value_counts().to_dict()
