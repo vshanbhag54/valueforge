@@ -345,6 +345,7 @@ def _persist_statements(cur, fundamentals):
     }
     provenance_fields = {
         "matched_fact_tags","diagnostic_fact_names","capex_fact_tags",
+        "missing_income_fields","missing_balance_fields","missing_cash_flow_fields",
         "flow_context_id","instant_context_id","flow_fact_coverage",
         "instant_fact_coverage","unit_currency_note","source_label",
     }
@@ -411,6 +412,28 @@ def _persist_statements(cur, fundamentals):
                 _integer(row.get("parser_version")),_json(metrics),_json(provenance),
             ),
         )
+        if data_quality and data_quality != "COMPLETE":
+            issue_detail = (
+                f"Financial statement quality={data_quality}; "
+                f"completeness={completeness}; "
+                f"missing income={row.get('missing_income_fields')}; "
+                f"missing balance={row.get('missing_balance_fields')}; "
+                f"missing cash flow={row.get('missing_cash_flow_fields')}"
+            )
+            cur.execute(
+                """
+                insert into valueforge.data_quality_issues(
+                  company_key,filing_key,issue_code,severity,detail
+                )
+                select %s,%s,'XBRL_STATEMENT_INCOMPLETE','WARNING',%s
+                where not exists (
+                  select 1 from valueforge.data_quality_issues
+                  where filing_key=%s and issue_code='XBRL_STATEMENT_INCOMPLETE'
+                    and resolved_at is null and detail=%s
+                )
+                """,
+                (key,filing_key,issue_detail,filing_key,issue_detail),
+            )
         written += 1
     return written
 
