@@ -60,9 +60,11 @@ def _value_row(row):
             "valuation_status": "FINANCIAL_DATA_NOT_VALIDATED",
         }
     fcf = _finite(row.get("fcf"))
-    paid_up_cr = _finite(row.get("paid_up_capital"))
-    face_value = _finite(row.get("face_value"))
-    shares_cr = paid_up_cr / face_value if paid_up_cr and face_value and paid_up_cr > 0 and face_value > 0 else None
+    # Never infer outstanding shares from paid-up capital / face value:
+    # bonus issues, buybacks, multiple share classes and corporate actions
+    # can make that proxy materially wrong. Require a reported share count.
+    shares_cr = _finite(row.get("shares_outstanding_cr"))
+    shares_source = row.get("shares_outstanding_source")
     growth = _forecast_growth(row)
     values = {}
     for name, discount in DISCOUNT_SCENARIOS.items():
@@ -76,7 +78,7 @@ def _value_row(row):
         status = "NO_CURRENT_PRICE"
     elif fcf is None or fcf <= 0:
         status = "FCF_UNAVAILABLE_OR_NON_POSITIVE"
-    elif shares_cr is None:
+    elif shares_cr is None or shares_cr <= 0:
         status = "SHARE_COUNT_UNVERIFIED"
     elif growth is None:
         status = "FIVE_YEAR_GROWTH_HISTORY_UNAVAILABLE"
@@ -93,6 +95,7 @@ def _value_row(row):
     return {
         **values,
         "shares_outstanding_crore": shares_cr,
+        "shares_outstanding_source": shares_source,
         "dcf_growth_assumption_pct": round(growth * 100, 2) if growth is not None else None,
         "dcf_base_discount_rate_pct": round(DISCOUNT_SCENARIOS["base"] * 100, 2),
         "dcf_terminal_growth_pct": round(TERMINAL_GROWTH * 100, 2),
@@ -109,7 +112,7 @@ def apply_intrinsic_valuation(frame):
     based on half the weaker verified five-year sales and profit CAGR,
     clipped to -5%..8%. It is a conservative screening proxy, not a formal
     appraisal: banks/insurers are excluded by the research screen, and
-    companies without verified statements, FCF, share count, and five-year
+    companies without verified statements, FCF, reported shares outstanding, and five-year
     growth history remain unvalued rather than receiving an invented fair value.
     """
     if frame.empty:
