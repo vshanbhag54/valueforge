@@ -18,6 +18,7 @@ def test_complete_bank_metrics_are_routed_to_sector_review_not_automatic_buy():
         "name":"Example Bank Ltd","sector":"Banking","roe":15,
         "roa_pct":1.5,"nim_pct":3.5,"gnpa_pct":2.0,"nnpa_pct":0.5,
         "crar_pct":17,"cost_to_income_pct":45,
+        "source_url":"https://exchange.example/bank-results.pdf","period_end":"2026-03-31",
     }
     result=evaluate_sector_metrics(row)
     assert result["sector_metrics_status"]=="METRICS_COMPLETE"
@@ -39,3 +40,15 @@ def test_non_financial_company_is_not_given_sector_review_label():
     result=evaluate_sector_metrics({"name":"ABC Manufacturing Ltd","sector":"Industrials"})
     assert result["sector_model"] is None
     assert result["sector_metrics_status"]=="NOT_APPLICABLE"
+
+
+def test_sector_metrics_without_primary_source_or_current_period_remain_incomplete():
+    row={
+        "name":"Example Bank Ltd","sector":"Banking","roe":15,
+        "roa_pct":1.5,"nim_pct":3.5,"gnpa_pct":2.0,"nnpa_pct":0.5,
+        "crar_pct":17,"cost_to_income_pct":45,
+    }
+    result=evaluate_sector_metrics(row)
+    assert result["sector_metrics_status"]=="INCOMPLETE"
+    assert "sector_data_source_url" in result["sector_metrics_missing"]
+    assert "sector_data_as_of" in result["sector_metrics_missing"]
