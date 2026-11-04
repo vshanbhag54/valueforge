@@ -37,3 +37,32 @@ def test_ttm_does_not_sum_nonconsecutive_quarters():
         {"symbol":"ABC","exchange":"NSE","period_end":"2026-03-31","period_kind":"quarter","net_profit":1},
     ])
     assert _ttm_xbrl_fundamentals(frame).empty
+
+
+def test_latest_xbrl_does_not_promote_single_quarter_as_latest_fundamentals():
+    from valueforge.research import _latest_xbrl
+
+    history=pd.DataFrame([{
+        "symbol":"ABC","exchange":"NSE","isin":"INE000A01001",
+        "period_end":"2026-09-30","period_kind":"quarter","basis":"consolidated",
+        "audited":False,"sales":100.0,"net_profit":10.0,
+    }])
+    assert _latest_xbrl(history).empty
+
+
+def test_latest_xbrl_uses_audited_annual_when_ttm_is_not_available():
+    from valueforge.research import _latest_xbrl
+
+    history=pd.DataFrame([{
+        "symbol":"ABC","exchange":"NSE","isin":"INE000A01001",
+        "period_end":"2026-03-31","period_kind":"annual","basis":"consolidated",
+        "audited":True,"sales":400.0,"net_profit":40.0,
+    },{
+        "symbol":"ABC","exchange":"NSE","isin":"INE000A01001",
+        "period_end":"2026-06-30","period_kind":"quarter","basis":"consolidated",
+        "audited":False,"sales":110.0,"net_profit":11.0,
+    }])
+    latest=_latest_xbrl(history)
+    assert len(latest)==1
+    assert latest.iloc[0]["period_kind"]=="annual"
+    assert latest.iloc[0]["net_profit"]==40.0
