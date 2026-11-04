@@ -301,6 +301,40 @@ def _run_daily_ai(ranked,out_dir):
     return {"status":"COMPLETED" if not partial else "PARTIAL","reports_written":len(written),"reports":written,"partial_symbols":partial}
 
 
+def fundamental_eligibility_summary(fundamentals):
+    if fundamentals is None or fundamentals.empty:
+        return {
+            "xbrl_filing_rows":0,"xbrl_company_count":0,
+            "audited_annual_company_count":0,"ttm_company_count":0,
+            "eligible_xbrl_company_count":0,"interim_only_company_count":0,
+        }
+    labels=fundamentals.get("source_label",pd.Series("",index=fundamentals.index)).astype("string").str.lower()
+    xbrl=fundamentals[labels.str.contains("xbrl",na=False)].copy()
+    if xbrl.empty:
+        return {
+            "xbrl_filing_rows":0,"xbrl_company_count":0,
+            "audited_annual_company_count":0,"ttm_company_count":0,
+            "eligible_xbrl_company_count":0,"interim_only_company_count":0,
+        }
+    company_keys=set(_company_key(xbrl).dropna().astype(str))
+    kind=xbrl.get("period_kind",pd.Series("",index=xbrl.index)).astype("string").str.lower()
+    annual=xbrl[kind.str.contains("annual",na=False)].copy()
+    audited=annual.get("audited",pd.Series(False,index=annual.index)).astype("string").str.lower().isin(["true","1","yes","y"])
+    annual_keys=set(_company_key(annual[audited]).dropna().astype(str)) if not annual.empty else set()
+    ttm=_ttm_xbrl_fundamentals(xbrl)
+    ttm_keys=set(_company_key(ttm).dropna().astype(str)) if not ttm.empty else set()
+    eligible=_latest_xbrl(xbrl)
+    eligible_keys=set(_company_key(eligible).dropna().astype(str)) if not eligible.empty else set()
+    return {
+        "xbrl_filing_rows":int(len(xbrl)),
+        "xbrl_company_count":len(company_keys),
+        "audited_annual_company_count":len(annual_keys),
+        "ttm_company_count":len(ttm_keys),
+        "eligible_xbrl_company_count":len(eligible_keys),
+        "interim_only_company_count":len(company_keys-eligible_keys),
+    }
+
+
 def latest_market_snapshot_date(market):
     """Return the newest valid snapshot date despite missing dates on unpriced listings."""
     if "snapshot_date" not in market.columns:
@@ -347,6 +381,7 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "security_master_status":master_status,
       "eod_price_available":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum()),
       "fundamental_rows":int(len(fundamentals)),
+      "fundamental_eligibility":fundamental_eligibility_summary(fundamentals),
       "filing_registry_rows":int(len(filing_registry)),
       "filing_registry_parse_failures":int(filing_registry.get("parse_status",pd.Series(dtype=object)).astype(str).str.startswith("PARSE_FAILED").sum()),
       "matched_rows":int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum()),
