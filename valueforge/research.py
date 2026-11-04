@@ -350,5 +350,22 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "ai_research":ai_status,
       "method":"EOD cross-sectional market screen + XBRL/Screener fundamentals + TTM calculations + optional quota-limited specialist diligence; research only."
     }
+    try:
+        from .db import persist_research_snapshot
+        summary["database"] = persist_research_snapshot(
+            market=market,
+            security_master=security_master,
+            fundamentals=fundamentals,
+            ranked=ranked,
+            summary=summary,
+        )
+    except Exception as exc:
+        # Database failure must be visible but must not destroy the already
+        # completed local research snapshot or interrupt the next daily run.
+        summary["database"] = {
+            "status":"ERROR",
+            "error":f"{type(exc).__name__}: {exc}",
+            "note":"CSV checkpoint was written; configure/fix PostgreSQL and rerun to backfill this snapshot.",
+        }
     (out/"research_status.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     return ranked,summary
