@@ -23,10 +23,13 @@ def _finite(value):
 
 def _forecast_growth(row):
     """Use half the weaker verified five-year sales/profit CAGR, bounded conservatively."""
-    values = [_finite(row.get("sales_cagr_5y")), _finite(row.get("profit_cagr_5y"))]
-    values = [value / 100 for value in values if value is not None]
-    if not values:
+    sales = _finite(row.get("sales_cagr_5y"))
+    profits = _finite(row.get("profit_cagr_5y"))
+    # Do not proxy a missing five-year series with the one metric that happens
+    # to exist: require both six-point annual histories for the growth input.
+    if sales is None or profits is None:
         return None
+    values = [sales / 100, profits / 100]
     return max(-0.05, min(0.08, min(values) * 0.5))
 
 
@@ -91,7 +94,7 @@ def apply_intrinsic_valuation(frame):
 
     Free cash flow is operating cash flow less reported cash capex. The model
     uses 12/14/16% discount rates and 3% terminal growth, with forecast growth
-    based on half the weaker positive/negative five-year sales/profit CAGR,
+    based on half the weaker verified five-year sales and profit CAGR,
     clipped to -5%..8%. It is a conservative screening proxy, not a formal
     appraisal: banks/insurers are excluded by the research screen, and
     companies without verified FCF, share count, and five-year growth history
