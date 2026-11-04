@@ -37,6 +37,10 @@ def assess_financial_quality(row, as_of=None):
         period_status = "CURRENT" if 0 <= age_days <= 450 else "STALE_OR_FUTURE"
 
     basis = _safe_text(row.get("basis")).strip().lower()
+    period_kind = _safe_text(row.get("period_kind")).strip().lower()
+    is_annual = "annual" in period_kind
+    is_ttm = "ttm" in period_kind
+    audited = _safe_text(row.get("audited")).strip().lower() in {"true","1","yes","y"}
     source_url = _safe_text(row.get("source_url")).strip()
     source_label = _safe_text(row.get("source_label")).lower()
     match_method = _safe_text(row.get("fundamental_match_method")) or "UNMATCHED"
@@ -46,6 +50,10 @@ def assess_financial_quality(row, as_of=None):
         issues.append("MISSING_CORE_FIELDS:" + ",".join(missing))
     if period_status != "CURRENT":
         issues.append(period_status)
+    if not (is_annual or is_ttm):
+        issues.append("ANNUAL_OR_TTM_REQUIRED")
+    if is_annual and not audited:
+        issues.append("ANNUAL_STATEMENT_NOT_AUDITED")
     if basis != "consolidated":
         issues.append("CONSOLIDATION_NOT_VERIFIED")
     if not source_url.startswith(("http://", "https://")):
@@ -76,14 +84,16 @@ def assess_financial_quality(row, as_of=None):
             pass
 
     strong_identity = match_method in {"ISIN", "EXCHANGE_SCRIP_CODE", "EXCHANGE_SYMBOL"}
-    if (not missing and period_status == "CURRENT" and basis == "consolidated"
-            and source_url.startswith(("http://", "https://")) and strong_identity
-            and not numeric_issues and not equity_issue):
+    if (not missing and period_status == "CURRENT" and (is_ttm or (is_annual and audited))
+            and basis == "consolidated" and source_url.startswith(("http://", "https://"))
+            and strong_identity and not numeric_issues and not equity_issue):
         status = "VALIDATED"
     elif "screener" in source_label or "manual" in source_label:
         status = "MANUAL_REVIEW_REQUIRED"
     elif period_status == "STALE_OR_FUTURE":
         status = "STALE"
+    elif not (is_annual or is_ttm) or (is_annual and not audited):
+        status = "REVIEW_REQUIRED"
     elif not strong_identity:
         status = "IDENTITY_REVIEW_REQUIRED"
     elif missing:
