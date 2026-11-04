@@ -330,6 +330,16 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
     filing_status=json.loads(status_path.read_text(encoding="utf-8")) if status_path.exists() else {}
     filing_registry_path=Path("data/fundamentals/processed_filings.csv")
     filing_registry=pd.read_csv(filing_registry_path) if filing_registry_path.exists() and filing_registry_path.stat().st_size else pd.DataFrame()
+    if not fundamentals.empty and not filing_registry.empty and "filing_key" in fundamentals and "filing_key" in filing_registry:
+        parser_versions = filing_registry.drop_duplicates("filing_key",keep="last").set_index("filing_key").get("parser_version")
+        if parser_versions is not None:
+            mapped_versions = fundamentals["filing_key"].astype("string").map(parser_versions)
+            if "parser_version" not in fundamentals:
+                fundamentals["parser_version"] = mapped_versions
+            else:
+                fundamentals["parser_version"] = fundamentals["parser_version"].where(
+                    fundamentals["parser_version"].notna(),mapped_versions
+                )
     summary={
       "scan_at_utc":pd.Timestamp.now(tz="UTC").isoformat(),
       "market_rows":int(len(market)),
