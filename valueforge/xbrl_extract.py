@@ -227,6 +227,20 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
     if op_profit is not None and sales and sales > 0:
         out["operating_margin"] = op_profit / sales * 100
 
+    # Persist a compact parse trace so a zero/missing value can be diagnosed
+    # from the original facts selected, rather than silently attributed to zero.
+    matched_tags = {}
+    for key, aliases in {**FLOW_ALIASES, **INSTANT_ALIASES}.items():
+        matched = [fact.local_name for fact in (flows + instants)
+                   if fact.local_name.lower() in {a.lower() for a in aliases}]
+        if matched:
+            matched_tags[key] = sorted(set(matched))
+    diagnostic_names = sorted({
+        fact.local_name for fact in summary.facts
+        if any(term in fact.local_name.lower() for term in
+               ("revenue", "turnover", "profit", "cashflow", "cashflows", "financecost",
+                "earningspershare", "operatingprofit", "sharecapital", "facevalue"))
+    })
     isin = filing.get("isin") or _get_isin(xml_bytes)
     out.update({
         "symbol": filing.get("symbol"),
@@ -246,6 +260,10 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
         "taxonomy_family": summary.taxonomy_family.value,
         "fact_count": len(summary.facts),
         "context_count": len(summary.contexts),
+        "flow_context_id": flow_id,
+        "instant_context_id": instant_id,
+        "matched_fact_tags": json.dumps(matched_tags, sort_keys=True),
+        "diagnostic_fact_names": json.dumps(diagnostic_names),
         "unit_currency_note": "Monetary values normalized to INR crore; per-share values in INR",
     })
     return out
