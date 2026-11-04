@@ -52,3 +52,10 @@ def test_sector_metrics_without_primary_source_or_current_period_remain_incomple
     assert result["sector_metrics_status"]=="INCOMPLETE"
     assert "sector_data_source_url" in result["sector_metrics_missing"]
     assert "sector_data_as_of" in result["sector_metrics_missing"]
+
+
+def test_non_banking_financial_wording_is_classified_as_nbfc():
+    assert classify_sector({
+        "name":"Example Lending Limited",
+        "sector":"Non-Banking Financial Company",
+    })=="NBFC"
