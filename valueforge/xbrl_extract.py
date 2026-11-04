@@ -8,23 +8,25 @@ from india_xbrl.reader import read_instance
 
 
 FLOW_ALIASES = {
-    "sales": ("RevenueFromOperations", "Revenue", "RevenueFromOperationsGross"),
-    "net_profit": ("ProfitLoss", "ProfitLossForPeriod", "ProfitLossFromContinuingOperations"),
-    "profit_before_tax": ("ProfitLossFromContinuingOperationsBeforeTax", "ProfitLossBeforeTax"),
+    # SEBI Integrated Finance (Ind AS) taxonomy local names from the vendored
+    # 2025 taxonomy, ordered from the most specific statement fact.
+    "sales": ("RevenueFromOperations", "TurnoverOrTotalIncome", "Revenue", "RevenueFromOperationsGross"),
+    "net_profit": ("ProfitLossForPeriodFromContinuingOperations", "ProfitLossForPeriod", "ProfitOrLossAttributableToOwnersOfParent", "NetProfitAfterTax", "ProfitLoss", "ProfitLossFromContinuingOperations"),
+    "profit_before_tax": ("ProfitBeforeTax", "ProfitLossFromContinuingOperationsBeforeTax", "ProfitLossBeforeTax"),
     "finance_cost": ("FinanceCosts", "FinanceCost"),
     "operating_profit": ("OperatingProfitLoss", "ProfitLossFromOperatingActivities", "OperatingProfit"),
-    "ocf": ("CashFlowsFromUsedInOperatingActivities", "NetCashFlowsFromUsedInOperatingActivities", "CashFlowsFromOperatingActivities"),
-    "basic_eps": ("BasicEarningsPerShare", "EarningsPerShareBasic", "BasicEarningsLossPerShare"),
+    "ocf": ("CashFlowsFromUsedInOperatingActivities", "CashFlowsFromUsedInOperations", "NetCashFlowsFromUsedInOperatingActivities", "CashFlowsFromOperatingActivities"),
+    "basic_eps": ("BasicEarningsLossPerShareFromContinuingOperations", "BasicEarningsPerShare", "EarningsPerShareBasic", "BasicEarningsLossPerShare"),
 }
 INSTANT_ALIASES = {
     "equity": ("EquityAttributableToOwnersOfParent", "Equity", "TotalEquity", "EquityIncludingNoncontrollingInterest"),
     "assets": ("Assets", "TotalAssets"),
-    "cash": ("CashAndCashEquivalents", "CashAndCashEquivalentsAtEndOfPeriod", "CashCashEquivalentsAndBankBalances", "CashAndBankBalances"),
+    "cash": ("CashAndCashEquivalents", "CashAndCashEquivalentsCashFlowStatement", "BankBalanceOtherThanCashAndCashEquivalents", "CashAndCashEquivalentsAtEndOfPeriod", "CashCashEquivalentsAndBankBalances", "CashAndBankBalances"),
     "total_debt": ("Borrowings", "TotalBorrowings", "BorrowingsCurrentAndNoncurrent"),
     "short_debt": ("BorrowingsCurrent", "CurrentBorrowings", "ShortTermBorrowings"),
     "long_debt": ("BorrowingsNoncurrent", "NonCurrentBorrowings", "LongTermBorrowings"),
-    "paid_up_capital": ("PaidUpEquityShareCapital", "EquityShareCapital"),
-    "face_value": ("FaceValueOfEquityShare", "FaceValueOfEquityShares", "FaceValuePerShare"),
+    "paid_up_capital": ("PaidUpValueOfEquityShareCapital", "PaidUpEquityShareCapital", "EquityShareCapital"),
+    "face_value": ("FaceValueOfEquityShareCapital", "FaceValueOfEquityShare", "FaceValueOfEquityShares", "FaceValuePerShare"),
 }
 
 
