@@ -298,6 +298,9 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "unpriced_listed_rows":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("NO_EOD_PRICE").sum()),
       "market_date":latest_market_snapshot_date(market),
       "filings_status":filing_status,
+      "filing_queue_pending":int(filing_status.get("pending_after_batch",filing_status.get("queue_total",0)) or 0),
+      "filing_parse_failed":int(filing_status.get("parse_failed",0) or 0),
+      "filing_parse_success_pct":round(100*int(filing_status.get("parsed",0) or 0)/max(int(filing_status.get("downloaded",0) or 0),1),2),
       **result.summary,
       "ai_research":ai_status,
       "method":"EOD cross-sectional market screen + XBRL/Screener fundamentals + TTM calculations + optional quota-limited specialist diligence; research only."
