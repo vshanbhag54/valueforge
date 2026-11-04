@@ -29,6 +29,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -36,14 +37,27 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Refresh EOD universe and run research scan
         run: python -m valueforge.cli refresh-and-scan
-      - name: Commit updated snapshots and agent reports
+      - name: Archive daily market snapshot and scan
+        uses: actions/upload-artifact@v4
+        with:
+          name: valueforge-eod-snapshot-${{ github.run_number }}
+          path: |
+            data/live/market_latest.csv
+            data/live/market_status.json
+            data/live/daily_research.csv
+            data/live/research_status.json
+            data/live/reports/*.md
+          if-no-files-found: error
+          retention-days: 90
+      - name: Commit compact status and agent reports only
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/live
+          git add data/live/market_status.json data/live/research_status.json data/live/reports
           if git diff --cached --quiet; then
-            echo "No new snapshot."
+            echo "No status or report changes."
           else
-            git commit -m "chore(data): refresh EOD universe and daily research scan"
-            git push
+            git commit -m "chore(data): publish daily EOD research status"
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
