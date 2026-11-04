@@ -13,7 +13,7 @@ from .universe import fetch_security_master, save_security_master
 def main():
     parser=argparse.ArgumentParser(description="ValueForge live EOD market and XBRL research operation")
     parser.add_argument("command",choices=["refresh","scan","refresh-and-scan","sync-filings"])
-    parser.add_argument("--lookback-days",type=int,default=45,help="Filing discovery lookback; use 1825 for an initial five-year queue.")
+    parser.add_argument("--lookback-days",type=int,default=45,help="Filing discovery lookback; use 2555 for the initial seven-year history queue.")
     parser.add_argument("--limit",type=int,default=60,help="Maximum XBRL documents parsed in this run.")
     parser.add_argument("--workers",type=int,default=4,help="Polite concurrent filing downloads (max 6).")
     args=parser.parse_args()
