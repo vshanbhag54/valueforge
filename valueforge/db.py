@@ -73,6 +73,10 @@ def company_key(row: dict) -> str | None:
     return None
 
 
+def _flag(value) -> bool:
+    return str(_scalar(value) or "").strip().lower() in {"true","1","yes","y"}
+
+
 def _text(value) -> str | None:
     v = _scalar(value)
     if v is None:
@@ -207,6 +211,87 @@ def _persist_market(cur, market):
     return written
 
 
+def _persist_filing_registry(cur, registry):
+    """Persist both successful and failed filing attempts with parse diagnostics."""
+    if registry is None or registry.empty:
+        return 0
+    rows = registry.to_dict("records")
+    _company_upsert(cur, [
+        {**row, "name": row.get("company") or row.get("name")}
+        for row in rows
+    ])
+    written = 0
+    for row in rows:
+        filing_key = _text(row.get("filing_key"))
+        source_url = _text(row.get("xbrl_url") or row.get("source_url"))
+        if not filing_key or not source_url:
+            continue
+        parse_status = _text(row.get("parse_status")) or "DISCOVERED"
+        parse_error = _text(row.get("parse_error"))
+        if parse_error is None and parse_status.startswith("PARSE_FAILED"):
+            parse_error = parse_status.partition(":")[2].strip() or parse_status
+        basis = "consolidated" if _flag(row.get("consolidated")) else "standalone"
+        key = company_key(row)
+        if key is None:
+            continue
+        cur.execute(
+            """
+            insert into valueforge.filings(
+              filing_key,company_key,exchange,symbol,security_code,isin,filing_id,
+              period_end,filing_at,reporting_basis,audited,source_url,parser_version,
+              parse_status,fact_count,parse_error
+            ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            on conflict (filing_key) do update set
+              company_key=excluded.company_key, exchange=excluded.exchange,
+              symbol=excluded.symbol, security_code=coalesce(excluded.security_code,valueforge.filings.security_code),
+              isin=coalesce(excluded.isin,valueforge.filings.isin),
+              filing_id=coalesce(excluded.filing_id,valueforge.filings.filing_id),
+              period_end=coalesce(excluded.period_end,valueforge.filings.period_end),
+              filing_at=coalesce(excluded.filing_at,valueforge.filings.filing_at),
+              reporting_basis=excluded.reporting_basis,audited=excluded.audited,
+              source_url=excluded.source_url,parser_version=excluded.parser_version,
+              parse_status=excluded.parse_status,fact_count=excluded.fact_count,
+              parse_error=excluded.parse_error,updated_at=now()
+            """,
+            (
+                filing_key,key,_text(row.get("exchange")),_text(row.get("symbol")),
+                _text(row.get("security_code")),_text(row.get("isin")),
+                _text(row.get("filing_id")),_scalar(row.get("period_end")),
+                _scalar(row.get("filing_ts")),basis,_flag(row.get("audited")),
+                source_url,_integer(row.get("parser_version")),parse_status,
+                _integer(row.get("fact_count")),parse_error,
+            ),
+        )
+        written += 1
+        if parse_error:
+            cur.execute(
+                """
+                insert into valueforge.data_quality_issues(
+                  company_key,filing_key,issue_code,severity,detail
+                )
+                select %s,%s,'XBRL_PARSE_FAILED','ERROR',%s
+                where not exists (
+                  select 1 from valueforge.data_quality_issues
+                  where filing_key=%s and issue_code='XBRL_PARSE_FAILED'
+                    and resolved_at is null
+                )
+                """,
+                (key,filing_key,parse_error,filing_key),
+            )
+    return written
+
+
+def _record_ingestion(cur, source, status, rows_seen, rows_written, details):
+    cur.execute(
+        """
+        insert into valueforge.ingestion_runs(
+          source,started_at,finished_at,status,rows_seen,rows_written,details
+        ) values (%s,now(),now(),%s,%s,%s,%s::jsonb)
+        """,
+        (source,status,int(rows_seen or 0),int(rows_written or 0),_json(details)),
+    )
+
+
 def _persist_statements(cur, fundamentals):
     if fundamentals is None or fundamentals.empty:
         return 0
@@ -293,7 +378,7 @@ def _persist_statements(cur, fundamentals):
     return written
 
 
-def persist_research_snapshot(market, security_master, fundamentals, ranked, summary):
+def persist_research_snapshot(market, security_master, fundamentals, ranked, summary, filing_registry=None):
     """Upsert the current data snapshot and research run into private PostgreSQL.
 
     No connection is attempted unless VALUEFORGE_DATABASE_URL or DATABASE_URL
@@ -301,7 +386,7 @@ def persist_research_snapshot(market, security_master, fundamentals, ranked, sum
     """
     dsn = database_url()
     if not dsn:
-        return {"status":"NOT_CONFIGURED","companies":0,"securities":0,"prices":0,"statements":0,"research_rows":0}
+        return {"status":"NOT_CONFIGURED","companies":0,"securities":0,"prices":0,"filings":0,"statements":0,"research_rows":0}
     try:
         import psycopg
     except ImportError as exc:
@@ -309,7 +394,7 @@ def persist_research_snapshot(market, security_master, fundamentals, ranked, sum
 
     model_version = os.getenv("VALUEFORGE_MODEL_VERSION","valueforge-0.2.0")
     market_date = _text(summary.get("market_date"))
-    counts = {"companies":0,"securities":0,"prices":0,"statements":0,"research_rows":0}
+    counts = {"companies":0,"securities":0,"prices":0,"filings":0,"statements":0,"research_rows":0}
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
             cur.execute("select to_regclass('valueforge.companies')")
@@ -317,7 +402,12 @@ def persist_research_snapshot(market, security_master, fundamentals, ranked, sum
                 raise RuntimeError("ValueForge database schema is missing. Apply database/schema.sql before enabling VALUEFORGE_DATABASE_URL.")
             counts["securities"] = _persist_securities(cur,security_master)
             counts["prices"] = _persist_market(cur,market)
+            counts["filings"] = _persist_filing_registry(cur,filing_registry)
             counts["statements"] = _persist_statements(cur,fundamentals)
+            _record_ingestion(cur,"exchange_security_master","COMPLETED",len(security_master),counts["securities"],{"rows":len(security_master)})
+            _record_ingestion(cur,"eod_market_prices","COMPLETED",len(market),counts["prices"],{"rows":len(market)})
+            _record_ingestion(cur,"exchange_xbrl_filings","COMPLETED",len(filing_registry) if filing_registry is not None else 0,counts["filings"],{"registry_rows":len(filing_registry) if filing_registry is not None else 0})
+            _record_ingestion(cur,"financial_statements","COMPLETED",len(fundamentals),counts["statements"],{"rows":len(fundamentals)})
             cur.execute(
                 """
                 insert into valueforge.research_runs(market_date,model_version,status,summary)
@@ -369,6 +459,7 @@ def persist_research_snapshot(market, security_master, fundamentals, ranked, sum
                     ),
                 )
                 counts["research_rows"] += 1
+            _record_ingestion(cur,"daily_research_scan","COMPLETED",len(rows),counts["research_rows"],{"research_run_id":run_id,"market_date":market_date})
             counts["companies"] = len({
                 company_key(r) for r in (security_master.to_dict("records") if security_master is not None else [])
                 if company_key(r)
