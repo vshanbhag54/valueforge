@@ -99,10 +99,26 @@ def _pick_flow_context(summary, period_end, relating_to):
         days = _days(ctx)
         if days is not None and bounds[0] <= days <= bounds[1]:
             candidates.append((abs(days-target), ctx.context_id, days))
+    if not candidates and kind == "unknown":
+        # Missing metadata: select a discrete quarter if present. Only fall
+        # back to annual/half-year when no quarter context exists.
+        fallback = []
+        for ctx in summary.contexts.values():
+            if ctx.is_instant or not ctx.start or not ctx.end or ctx.end != period_end.isoformat() or ctx.dimensions:
+                continue
+            days = _days(ctx)
+            if days is not None and 150 <= days <= 400:
+                fallback.append((abs(days-365), ctx.context_id, days))
+        if fallback:
+            fallback.sort()
+            _, context_id, days = fallback[0]
+            return context_id, "annual" if days >= 300 else "half_year", days
     if not candidates:
         return None, kind, None
     candidates.sort()
     _, context_id, days = candidates[0]
+    if kind == "unknown":
+        kind = "quarter"
     return context_id, kind, days
 
 
