@@ -13,6 +13,10 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-2.5-flash-lite
+      VALUEFORGE_AI_DAILY_LIMIT: "2"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,7 +28,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Refresh EOD universe and run research scan
         run: python -m valueforge.cli refresh-and-scan
-      - name: Commit updated snapshots
+      - name: Commit updated snapshots and agent reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
