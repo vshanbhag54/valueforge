@@ -23,6 +23,7 @@ def test_bse_fundamentals_match_exchange_security_master_by_scrip_code():
     assert row["net_profit"]==100
     assert row["period_end"]=="2026-03-31"
     assert row["fundamentals_match"]
+    assert row["fundamental_match_method"]=="EXCHANGE_SCRIP_CODE"
     assert row["pe"]==10
 
 
