@@ -46,6 +46,6 @@ def test_missing_fields_are_not_zero():
     assert math.isnan(score) and count==0
 
 def test_financial_sector_requires_own_model():
-    row={"symbol":"BANK","name":"Bank","sector":"Banking","pe":9,"pb":1,"roe":14,"roce":15,"debt_to_equity":.2,"period_end":"2025-03-31"}
+    row={"symbol":"BANK","name":"Bank","sector":"Banking","close":100,"pe":9,"pb":1,"roe":14,"roce":15,"debt_to_equity":.2,"period_end":"2025-03-31"}
     result=screen_universe(pd.DataFrame([row]))
     assert result.companies.iloc[0].research_status=="SECTOR_MODEL_REQUIRED"
