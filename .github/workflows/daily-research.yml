@@ -47,7 +47,7 @@ jobs:
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       VALUEFORGE_DATABASE_URL: ${{ secrets.VALUEFORGE_DATABASE_URL }}
-      GEMINI_MODEL: gemini-2.5-flash-lite
+      GEMINI_MODEL: gemini-3.5-flash-lite
       VALUEFORGE_AI_DAILY_LIMIT: "2"
       VALUEFORGE_FILINGS_LOOKBACK_DAYS: ${{ inputs.filing_lookback_days || '45' }}
       VALUEFORGE_FILINGS_LIMIT: ${{ inputs.filing_batch_limit || '500' }}
