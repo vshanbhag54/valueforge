@@ -14,6 +14,7 @@ from valueforge.market_data import download_latest_market_data, load_market_snap
 from valueforge.pdf_extract import extract_relevant_pdf_text
 from valueforge.research import merge_market_and_fundamentals
 from valueforge.scoring import screen_universe
+from valueforge.universe import attach_market_prices, fetch_security_master, load_security_master
 
 st.set_page_config(page_title="ValueForge | Indian Value Research", page_icon="📈", layout="wide")
 st.title("ValueForge")
@@ -58,9 +59,19 @@ def get_market_data():
     # Fetch the latest public EOD snapshot directly when no local snapshot exists.
     return download_latest_market_data()
 
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_security_master_data():
+    local=load_security_master()
+    if not local.empty:
+        return local,read_json("data/master/security_master_status.json")
+    return fetch_security_master()
+
 try:
-    with st.spinner("Loading the latest NSE/BSE end-of-day snapshot..."):
+    with st.spinner("Loading NSE/BSE exchange data..."):
         market, market_status = get_market_data()
+        security_master, security_master_status = get_security_master_data()
+    if not security_master.empty:
+        market=attach_market_prices(security_master,market)
 except Exception as exc:
     st.error(f"Market data could not be loaded: {exc}")
     st.markdown("[TejHQ public Indian markets dataset](https://huggingface.co/datasets/tejhq/indian-markets)")
@@ -115,15 +126,16 @@ dates = market_status.get("exchange_dates", {}) if isinstance(market_status, dic
 nse_date = dates.get("NSE", str(df.loc[df["exchange"].astype(str).str.upper()=="NSE", "snapshot_date"].max()) if "snapshot_date" in df else "—")
 bse_date = dates.get("BSE", str(df.loc[df["exchange"].astype(str).str.upper()=="BSE", "snapshot_date"].max()) if "snapshot_date" in df else "—")
 
+priced=int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum())
 c1,c2,c3,c4,c5 = st.columns(5)
-c1.metric("EOD instruments", f"{len(market):,}")
-c2.metric("NSE EOD date", nse_date)
-c3.metric("BSE EOD date", bse_date)
-c4.metric("Fundamental rows", f"{len(fundamentals):,}")
-c5.metric("Research candidates", f"{result.summary['research_candidates']:,}")
+c1.metric("Listed equities", f"{len(market):,}")
+c2.metric("EOD prices available", f"{priced:,}")
+c3.metric("NSE EOD date", nse_date)
+c4.metric("BSE EOD date", bse_date)
+c5.metric("Value candidates", f"{result.summary['research_candidates']:,}")
 provider = market_status.get("provider", "TejHQ / Hugging Face") if isinstance(market_status, dict) else "TejHQ / Hugging Face"
 retrieved = market_status.get("retrieved_at_utc", "not available") if isinstance(market_status, dict) else "not available"
-st.caption(f"Market source: {provider} · Fundamentals: {fundamentals_source} · Retrieved: {retrieved}")
+st.caption(f"Market source: {provider} · Security master: {security_master_status.get('coverage','UNAVAILABLE')} · Fundamentals: {fundamentals_source} · Retrieved: {retrieved}")
 st.warning("This is end-of-day data, not intraday live pricing. A price-only record is not an investment opportunity. Scores are research triage signals, not buy/sell advice.")
 
 tab1,tab2,tab3,tab4 = st.tabs(["Market universe","Value opportunities","Research lab","Data health"])
@@ -196,6 +208,9 @@ with tab3:
 with tab4:
     st.subheader("Data freshness and integrity")
     st.json(market_status)
+    st.subheader("Exchange security master")
+    st.json(security_master_status)
+    st.subheader("Fundamental / filing ingestion")
     st.json(scan_status)
     st.json(read_json("data/live/filings_status.json"))
     st.write(f"Fundamentals: {len(fundamentals):,} rows · {fundamentals_source}")
