@@ -36,7 +36,7 @@ def test_registry_keys_accept_numeric_csv_parser_versions():
 
     registry = pd.DataFrame({
         "filing_key": ["A|1", "B|2", "C|3", "D|4"],
-        "parser_version": [8.0, "8", 3.0, None],
+        "parser_version": [9.0, "9", 3.0, None],
         "parse_status": ["PARSED", "PARSE_FAILED: unsupported context", "PARSED", "PARSED"],
     })
     assert _registry_keys(registry) == {"A|1", "B|2"}
