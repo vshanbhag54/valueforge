@@ -16,12 +16,12 @@ on:
       filing_lookback_days:
         description: "Filing discovery lookback in days (1825 queues roughly five years)"
         required: false
-        default: "45"
+        default: "1825"
         type: string
       filing_batch_limit:
         description: "Maximum XBRL filings to fetch and parse in this run"
         required: false
-        default: "60"
+        default: "180"
         type: string
 permissions:
   contents: write
@@ -37,7 +37,7 @@ jobs:
       GEMINI_MODEL: gemini-2.5-flash-lite
       VALUEFORGE_AI_DAILY_LIMIT: "2"
       VALUEFORGE_FILINGS_LOOKBACK_DAYS: ${{ inputs.filing_lookback_days || '45' }}
-      VALUEFORGE_FILINGS_LIMIT: ${{ inputs.filing_batch_limit || '60' }}
+      VALUEFORGE_FILINGS_LIMIT: ${{ inputs.filing_batch_limit || '180' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,7 +62,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/live/market_status.json data/live/research_status.json data/live/filings_status.json
-          git add data/fundamentals/xbrl_fundamentals.csv data/fundamentals/processed_filings.csv data/fundamentals/xbrl_filing_queue.jsonl 2>/dev/null || true
+          git add data/fundamentals/xbrl_fundamentals.csv data/fundamentals/processed_filings.csv data/fundamentals/xbrl_filing_queue.jsonl data/fundamentals/backfill_state.json 2>/dev/null || true
           if [ -d data/live/reports ]; then git add data/live/reports; fi
           if git diff --cached --quiet; then
             echo "No status, filing or report changes."
