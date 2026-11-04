@@ -1,17 +1,21 @@
 from datetime import date
 import math
 import pandas as pd
-from valueforge.market_data import latest_partition, MarketDataError
+from valueforge.market_data import latest_annual_partition, MarketDataError
 from valueforge.fundamentals import normalize_fundamentals
 from valueforge.scoring import screen_universe, score_company
 
-def test_latest_partition_chooses_newest_available():
-    files=["nse/year=2026/month=11/date=2026-11-02.parquet","nse/year=2026/month=11/date=2026-11-03.parquet"]
-    assert latest_partition(files,"nse",date(2026,11,4))==files[1]
+def test_latest_annual_rollup_chooses_current_year():
+    files=["nse/year=2024/nse_2024.parquet","nse/year=2025/nse_2025.parquet","nse/year=2026/nse_2026.parquet"]
+    assert latest_annual_partition(files,"nse",date(2026,11,4))==files[2]
 
-def test_latest_partition_rejects_stale_data():
+def test_bse_annual_rollup_selected():
+    files=["bse/year=2024/bse_2024.parquet","bse/year=2025/bse_2025.parquet"]
+    assert latest_annual_partition(files,"bse",date(2026,11,4))==files[1]
+
+def test_unknown_exchange_rollup_raises():
     try:
-        latest_partition(["nse/year=2026/month=10/date=2026-10-01.parquet"],"nse",date(2026,11,4))
+        latest_annual_partition(["nse/year=2026/nse_2026.parquet"],"bse",date(2026,11,4))
         assert False
     except MarketDataError: pass
 
