@@ -86,14 +86,24 @@ def _days(ctx):
     return (end - start).days + 1 if start and end else None
 
 
-def _period_hint(relating_to):
+def _period_hint(relating_to, period_from=None, period_end=None):
+    """Prefer explicit reporting-period dates over ambiguous exchange labels."""
+    start, end = _as_date(period_from), _as_date(period_end)
+    if start and end:
+        days = (end - start).days + 1
+        dated_kind = _kind_from_days(days)
+        if dated_kind in {"quarter", "half_year", "annual"}:
+            return dated_kind
     label = re.sub(r"[^a-z0-9]+", " ", str(relating_to or "").lower()).strip()
     if any(x in label for x in ("annual", "year ended", "full year", "yearly", "audited financial")):
         return "annual"
-    if any(x in label for x in ("half year", "half-year", "six month", "six months", "half yearly")):
-        return "half_year"
+    # Integrated filing titles often say "quarter and half year ended".
+    # A precise period_from is used above; without it, prefer discrete quarter
+    # rather than silently treating a result as cumulative YTD.
     if re.search(r"q[1-4]", label) or "quarter" in label or "three month" in label:
         return "quarter"
+    if any(x in label for x in ("half year", "half-year", "six month", "six months", "half yearly")):
+        return "half_year"
     return "unknown"
 
 
@@ -177,9 +187,9 @@ def _date_gap(context_date, target_date):
     return abs((context_date - target_date).days)
 
 
-def _pick_flow_context(summary, period_end, relating_to, unit_measures=None):
+def _pick_flow_context(summary, period_end, relating_to, unit_measures=None, period_from=None):
     """Choose flow context by filing date, actual duration, taxonomy facts and OneD/FourD hints."""
-    hint = _period_hint(relating_to)
+    hint = _period_hint(relating_to, period_from, period_end)
     candidates = []
     for ctx in summary.contexts.values():
         if ctx.is_instant or not ctx.start or not ctx.end:
@@ -296,7 +306,7 @@ def extract_filing_fundamentals(xml_bytes: bytes, filing: dict) -> dict:
 
     unit_measures = _unit_measures(xml_bytes)
     flow_id, period_kind, period_days, flow_date_gap, flow_coverage = _pick_flow_context(
-        summary, period_end, filing.get("relating_to"), unit_measures
+        summary, period_end, filing.get("relating_to"), unit_measures, filing.get("period_from")
     )
     instant_id, instant_date_gap, instant_coverage = _instant_context(summary, period_end, unit_measures)
     if not flow_id:
