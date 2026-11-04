@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 import pandas as pd
 
 
@@ -46,7 +47,7 @@ def _token(value):
 def classify_sector(row) -> str | None:
     sector=_token(row.get("sector"))
     name=_token(row.get("name"))
-    text=f"{sector} {name}"
+    text=re.sub(r"[^a-z0-9]+"," ",f"{sector} {name}").strip()
     if any(term in text for term in ("asset management","mutual fund","asset manager","amc ")):
         return "ASSET_MANAGER"
     if any(term in text for term in ("insurance","life insurer","general insurer")):
