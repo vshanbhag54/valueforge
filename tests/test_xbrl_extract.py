@@ -20,17 +20,17 @@ XML = b"""<?xml version="1.0"?>
   <xbrli:period><xbrli:instant>2024-06-30</xbrli:instant></xbrli:period>
  </xbrli:context>
  <in-capmkt:RevenueFromOperations contextRef="OneD" unitRef="INR" decimals="-3">500000000</in-capmkt:RevenueFromOperations>
- <in-capmkt:ProfitLoss contextRef="OneD" unitRef="INR" decimals="-3">50000000</in-capmkt:ProfitLoss>
- <in-capmkt:ProfitLossFromContinuingOperationsBeforeTax contextRef="OneD" unitRef="INR" decimals="-3">70000000</in-capmkt:ProfitLossFromContinuingOperationsBeforeTax>
+ <in-capmkt:ProfitLossForPeriodFromContinuingOperations contextRef="OneD" unitRef="INR" decimals="-3">50000000</in-capmkt:ProfitLoss>
+ <in-capmkt:ProfitBeforeTax contextRef="OneD" unitRef="INR" decimals="-3">70000000</in-capmkt:ProfitLossFromContinuingOperationsBeforeTax>
  <in-capmkt:FinanceCosts contextRef="OneD" unitRef="INR" decimals="-3">10000000</in-capmkt:FinanceCosts>
- <in-capmkt:OperatingProfitLoss contextRef="OneD" unitRef="INR" decimals="-3">100000000</in-capmkt:OperatingProfitLoss>
+ <in-capmkt:OperatingProfitLossForPeriodFromContinuingOperations contextRef="OneD" unitRef="INR" decimals="-3">100000000</in-capmkt:OperatingProfitLoss>
  <in-capmkt:CashFlowsFromUsedInOperatingActivities contextRef="OneD" unitRef="INR" decimals="-3">60000000</in-capmkt:CashFlowsFromUsedInOperatingActivities>
  <in-capmkt:EquityAttributableToOwnersOfParent contextRef="N1D" unitRef="INR" decimals="-3">300000000</in-capmkt:EquityAttributableToOwnersOfParent>
  <in-capmkt:EquityAttributableToOwnersOfParent contextRef="Prior" unitRef="INR" decimals="-3">250000000</in-capmkt:EquityAttributableToOwnersOfParent>
  <in-capmkt:Assets contextRef="N1D" unitRef="INR" decimals="-3">500000000</in-capmkt:Assets>
  <in-capmkt:Borrowings contextRef="N1D" unitRef="INR" decimals="-3">100000000</in-capmkt:Borrowings>
- <in-capmkt:PaidUpEquityShareCapital contextRef="N1D" unitRef="INR" decimals="-3">50000000</in-capmkt:PaidUpEquityShareCapital>
- <in-capmkt:FaceValueOfEquityShare contextRef="N1D" unitRef="INRPerShare" decimals="0">10</in-capmkt:FaceValueOfEquityShare>
+ <in-capmkt:PaidUpValueOfEquityShareCapital contextRef="N1D" unitRef="INR" decimals="-3">50000000</in-capmkt:PaidUpEquityShareCapital>
+ <in-capmkt:FaceValueOfEquityShareCapital contextRef="N1D" unitRef="INRPerShare" decimals="0">10</in-capmkt:FaceValueOfEquityShare>
 </xbrli:xbrl>
 """
 
