@@ -1,0 +1,7 @@
+{
+  "started_at_utc": "2026-11-04T09:25:00.176325+00:00",
+  "lookback_days": 1825,
+  "nse_discovered": 46600,
+  "xbrl_queue_total_after_discovery": 19466,
+  "note": "Initial discovery completed; incremental runs now use the configured daily lookback."
+}
