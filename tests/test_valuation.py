@@ -37,3 +37,13 @@ def test_dcf_refuses_to_invent_value_without_positive_fcf_or_share_count():
     assert out.loc[0,"valuation_status"]=="FCF_UNAVAILABLE_OR_NON_POSITIVE"
     assert pd.isna(out.loc[1,"dcf_fair_value_base"])
     assert out.loc[1,"valuation_status"]=="SHARE_COUNT_UNVERIFIED"
+
+
+def test_dcf_requires_both_five_year_growth_series():
+    frame=pd.DataFrame([{
+        "close":100.0,"fcf":100.0,"paid_up_capital":10.0,"face_value":1.0,
+        "sales_cagr_5y":8.0,"profit_cagr_5y":None,
+    }])
+    row=apply_intrinsic_valuation(frame).iloc[0]
+    assert pd.isna(row["dcf_fair_value_base"])
+    assert row["valuation_status"]=="FIVE_YEAR_GROWTH_HISTORY_UNAVAILABLE"
