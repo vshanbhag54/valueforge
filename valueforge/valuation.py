@@ -78,9 +78,9 @@ def _value_row(row):
     return {
         **values,
         "shares_outstanding_crore": shares_cr,
-        "dcf_growth_assumption_pct": growth * 100 if growth is not None else None,
-        "dcf_base_discount_rate_pct": DISCOUNT_SCENARIOS["base"] * 100,
-        "dcf_terminal_growth_pct": TERMINAL_GROWTH * 100,
+        "dcf_growth_assumption_pct": round(growth * 100, 2) if growth is not None else None,
+        "dcf_base_discount_rate_pct": round(DISCOUNT_SCENARIOS["base"] * 100, 2),
+        "dcf_terminal_growth_pct": round(TERMINAL_GROWTH * 100, 2),
         "margin_of_safety_pct": mos,
         "valuation_status": status,
     }
