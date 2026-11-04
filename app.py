@@ -159,7 +159,7 @@ with tab1:
         view = view[view.astype(str).apply(lambda col: col.str.contains(query, case=False, na=False)).any(axis=1)]
     if "turnover" in view:
         view = view[pd.to_numeric(view["turnover"], errors="coerce").fillna(0) >= turnover_min * 1e7]
-    wanted = ["exchange","symbol","name","isin","series","snapshot_date","close","ret_1d","ret_21d","ret_252d","pct_off_52w_high","volume","turnover","value_score","research_status"]
+    wanted = ["exchange","symbol","name","isin","series","snapshot_date","close","ret_1d","ret_21d","ret_252d","pct_off_52w_high","volume","turnover","pe","pb","dcf_fair_value_bear","dcf_fair_value_base","dcf_fair_value_bull","margin_of_safety_pct","valuation_status","value_score","research_status"]
     columns = [c for c in wanted if c in view.columns]
     sort_col = "turnover" if "turnover" in view.columns else ("volume" if "volume" in view.columns else "symbol")
     st.dataframe(view[columns].sort_values(sort_col, ascending=False, na_position="last"), use_container_width=True, hide_index=True)
@@ -169,12 +169,21 @@ with tab2:
     st.subheader("Value research queue")
     ready = df[df["research_status"].isin(["VALUE_RESEARCH_CANDIDATE","VALUE_WATCHLIST"])].copy()
     if ready.empty:
-        st.info("No fundamentals-backed value candidates yet. Import current financials with a reporting period and source; price/volume alone cannot establish value.")
+        st.info("No company currently passes the full fundamentals, cash-flow valuation and margin-of-safety gates. This is intentional: low P/E or price momentum alone is not an intrinsic-value case.")
     else:
         ready = ready.sort_values("value_score", ascending=False)
-        cols = [c for c in ["exchange","symbol","name","sector","close","pe","pb","roe","roce","debt_to_equity","ocf_to_net_profit","value_score","research_status","period_end","source_url"] if c in ready]
+        cols = [c for c in ["exchange","symbol","name","sector","close","pe","pb","roe","roce","debt_to_equity","ocf_to_net_profit","fcf","dcf_fair_value_bear","dcf_fair_value_base","dcf_fair_value_bull","margin_of_safety_pct","dcf_growth_assumption_pct","valuation_status","value_score","research_status","period_end","source_url"] if c in ready]
         st.dataframe(ready[cols], use_container_width=True, hide_index=True)
         st.download_button("Download value research queue", ready[cols].to_csv(index=False).encode(), "valueforge_value_queue.csv", "text/csv")
+    st.subheader("Intrinsic-value coverage")
+    valuation_cols=[c for c in ["exchange","symbol","name","close","fcf","dcf_fair_value_bear","dcf_fair_value_base","dcf_fair_value_bull","margin_of_safety_pct","dcf_growth_assumption_pct","valuation_status","source_url"] if c in df]
+    valued=df[df["valuation_status"].isin(["ATTRACTIVE_MARGIN_OF_SAFETY","WATCH_MARGIN_OF_SAFETY","LIMITED_MARGIN_OF_SAFETY","ABOVE_BASE_DCF_VALUE"])].copy() if "valuation_status" in df else pd.DataFrame()
+    if valued.empty:
+        st.caption("No verified DCF valuations yet. The model requires positive free cash flow, verified share count and five-year sales/profit history.")
+    else:
+        valued=valued.sort_values("margin_of_safety_pct",ascending=False,na_position="last")
+        st.dataframe(valued[valuation_cols],use_container_width=True,hide_index=True)
+    st.caption("DCF assumptions: five-year FCF projection; cost of equity 12% / 14% / 16%; terminal growth 3%; forecast growth equals half the weaker verified five-year sales/profit CAGR, bounded to -5%..8%. It is a screening proxy, not a formal appraisal.")
     counts = df["research_status"].value_counts().rename_axis("status").reset_index(name="companies")
     st.plotly_chart(px.bar(counts, x="status", y="companies", title="Research coverage by status"), use_container_width=True)
 
