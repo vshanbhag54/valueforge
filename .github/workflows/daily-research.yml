@@ -1,0 +1,37 @@
+name: ValueForge daily market refresh and research
+on:
+  schedule:
+    # 21:15 IST on weekdays, after the dataset's nightly EOD release.
+    - cron: "45 15 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: valueforge-daily-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Refresh EOD universe and run research scan
+        run: python -m valueforge.cli refresh-and-scan
+      - name: Commit updated snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/live
+          if git diff --cached --quiet; then
+            echo "No new snapshot."
+          else
+            git commit -m "chore(data): refresh EOD universe and daily research scan"
+            git push
+          fi
