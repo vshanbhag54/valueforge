@@ -374,8 +374,27 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
                 fundamentals["parser_version"] = fundamentals["parser_version"].where(
                     fundamentals["parser_version"].notna(),mapped_versions
                 )
+    match_methods=merged.get("fundamental_match_method",pd.Series("UNMATCHED",index=merged.index)).astype("string").fillna("UNMATCHED")
+    quality_statuses=merged.get("financial_quality_status",pd.Series("UNKNOWN",index=merged.index)).astype("string").fillna("UNKNOWN")
+    statement_quality=fundamentals.get("data_quality_status",pd.Series(dtype=object)).astype("string").fillna("UNKNOWN") if not fundamentals.empty else pd.Series(dtype=object)
+    failed_rows=filing_registry[
+        filing_registry.get("parse_status",pd.Series("",index=filing_registry.index)).astype(str).str.startswith("PARSE_FAILED")
+    ] if not filing_registry.empty else pd.DataFrame()
+    parse_categories={}
+    if not failed_rows.empty:
+        errors=failed_rows.get("parse_error",failed_rows.get("parse_status",pd.Series("",index=failed_rows.index))).astype(str)
+        def _parse_category(error):
+            upper=error.upper()
+            for token in ("XBRL_NO_FLOW_CONTEXT","XBRL_NO_INSTANT_CONTEXT","XBRL_NO_DURATION_CONTEXT","PARSEERROR","XML","TAXONOMY","UNIT"):
+                if token in upper: return token
+            return error.split(":",1)[0][:80] or "UNKNOWN"
+        parse_categories=pd.Series([_parse_category(e) for e in errors]).value_counts().to_dict()
     summary={
       "scan_at_utc":pd.Timestamp.now(tz="UTC").isoformat(),
+      "fundamental_match_methods":match_methods.value_counts().to_dict(),
+      "financial_quality_status_counts":quality_statuses.value_counts().to_dict(),
+      "xbrl_statement_quality_counts":statement_quality.value_counts().to_dict(),
+      "filing_parse_failure_categories":parse_categories,
       "market_rows":int(len(market)),
       "listed_security_master_rows":int(len(security_master)),
       "security_master_status":master_status,
