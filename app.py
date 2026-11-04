@@ -31,7 +31,7 @@ with st.sidebar:
     use_sample=st.toggle("Show illustrative sample only",value=False)
     st.divider()
     st.caption("AI analyst team")
-    st.write("Gemini calls:", "Enabled" if gemini_enabled() else "Not configured")
+    st.write("Gemini calls:", "Enabled" if configured_gemini_key else "Not configured")
     st.caption("Add GEMINI_API_KEY to Streamlit Secrets to enable separate LLM analyst calls. The key is never committed to this repository.")
 
 if uploaded is not None:
