@@ -11,7 +11,8 @@ def test_dcf_returns_sensitivity_range_and_margin_of_safety():
         "shares_outstanding_source":"Reported company share-count disclosure",
         "sales_cagr_5y":10.0,
         "profit_cagr_5y":8.0,
-        "financial_quality_status":"VALIDATED",\n        "period_kind":"TTM from 4 discrete quarters",
+        "financial_quality_status":"VALIDATED",
+        "period_kind":"TTM from 4 discrete quarters",
     }])
     row=apply_intrinsic_valuation(frame).iloc[0]
     assert row["dcf_fair_value_bear"] < row["dcf_fair_value_base"]
