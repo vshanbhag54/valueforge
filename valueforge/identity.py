@@ -63,7 +63,7 @@ def resolve_fundamental_rows(market: pd.DataFrame, fundamentals: pd.DataFrame):
 
     for idx, row in fundamentals.reset_index(drop=True).iterrows():
         isin = normalize_isin(row.get("isin"))
-        exchange = str(row.get("exchange") or "").strip().upper()
+        exchange = _text(row.get("exchange")).strip().upper()
         code = normalize_code(row.get("security_code"))
         symbol = normalize_symbol(row.get("symbol"))
         name = normalize_company_name(row.get("name"))
