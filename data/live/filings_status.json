@@ -1,22 +1,22 @@
 {
-  "run_at_utc": "2026-11-04T09:30:16.337278+00:00",
+  "run_at_utc": "2026-11-04T10:36:01.043464+00:00",
   "lookback_days": 45,
-  "effective_lookback_days": 45,
-  "initial_backfill": false,
+  "effective_lookback_days": 2555,
+  "initial_backfill": true,
   "batch_limit": 180,
   "discovery": {
-    "nse": 41,
-    "bse_integrated": 32,
-    "usable_xbrl": 16,
-    "new_queue_records": 1
+    "nse": 70059,
+    "bse_integrated": 55,
+    "usable_xbrl": 29237,
+    "new_queue_records": 10148
   },
   "discovery_errors": {},
-  "queue_total": 19467,
-  "pending_before_batch": 19467,
+  "queue_total": 29615,
+  "pending_before_batch": 29615,
   "batch_selected": 180,
   "downloaded": 180,
-  "parsed": 89,
-  "parse_failed": 91,
+  "parsed": 91,
+  "parse_failed": 89,
   "fetch_failed": 0,
   "fetch_stats": {
     "total": 180,
@@ -26,6 +26,6 @@
     "skipped_standalone": 0,
     "failed": 0
   },
-  "pending_after_batch": 19467,
+  "pending_after_batch": 29615,
   "state": "COMPLETED_WITH_ERRORS"
 }
