@@ -7,7 +7,7 @@ import streamlit as st
 from valueforge.agents import gemini_enabled, run_ai_committee
 from valueforge.data import load_sample_data
 from valueforge.fundamentals import normalize_fundamentals
-from valueforge.market_data import load_market_snapshot
+from valueforge.market_data import load_market_snapshot, download_latest_market_data
 from valueforge.pdf_extract import extract_relevant_pdf_text
 from valueforge.research import merge_market_and_fundamentals
 from valueforge.scoring import screen_universe
