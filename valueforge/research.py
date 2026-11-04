@@ -259,6 +259,15 @@ def _run_daily_ai(ranked,out_dir):
     return {"status":"COMPLETED" if not partial else "PARTIAL","reports_written":len(written),"reports":written,"partial_symbols":partial}
 
 
+def latest_market_snapshot_date(market):
+    """Return the newest valid snapshot date despite missing dates on unpriced listings."""
+    if "snapshot_date" not in market.columns:
+        return "unknown"
+    dates=pd.to_datetime(market["snapshot_date"],errors="coerce",utc=True)
+    latest=dates.max()
+    return latest.strftime("%Y-%m-%d") if pd.notna(latest) else "unknown"
+
+
 def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=FUNDAMENTALS_PATH,output_dir="data/live"):
     market=load_market_snapshot(market_path)
     if market.empty: raise RuntimeError("No market snapshot found. Run the market refresh workflow first.")
@@ -285,7 +294,7 @@ def run_daily_scan(market_path="data/live/market_latest.csv",fundamentals_path=F
       "eod_price_available":int(market.get("price_status",pd.Series("EOD_PRICE_AVAILABLE",index=market.index)).eq("EOD_PRICE_AVAILABLE").sum()),
       "fundamental_rows":int(len(fundamentals)),
       "matched_rows":int(merged.get("fundamentals_match",pd.Series(dtype=bool)).sum()),
-      "market_date":str(market["snapshot_date"].max()) if "snapshot_date" in market else "unknown",
+      "market_date":latest_market_snapshot_date(market),
       "filings_status":filing_status,
       **result.summary,
       "ai_research":ai_status,
