@@ -1,7 +1,10 @@
 from datetime import date
 import math
 import pandas as pd
-from valueforge.market_data import latest_annual_partition, MarketDataError
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+from valueforge.market_data import latest_annual_partition, MarketDataError, _read_latest_day
 from valueforge.fundamentals import normalize_fundamentals
 from valueforge.scoring import screen_universe, score_company
 
@@ -18,6 +21,19 @@ def test_unknown_exchange_rollup_raises():
         latest_annual_partition(["nse/year=2026/nse_2026.parquet"],"bse",date(2026,11,4))
         assert False
     except MarketDataError: pass
+
+def test_read_latest_day_filters_parquet_rows(tmp_path):
+    path=tmp_path/"prices.parquet"
+    table=pa.table({
+        "date":[date(2026,11,2),date(2026,11,3),date(2026,11,3)],
+        "symbol":["AAA","AAA","BBB"],
+        "close":[10.0,11.0,12.0],
+    })
+    pq.write_table(table,path,row_group_size=1)
+    frame, latest=_read_latest_day(path,date(2026,11,4))
+    assert latest==date(2026,11,3)
+    assert set(frame["symbol"])=={"AAA","BBB"}
+    assert len(frame)==2
 
 def test_screener_export_normalization():
     raw=pd.DataFrame([{"NSE Code":"ABC","Company Name":"ABC Ltd","Stock P/E":"12.5","ROE %":"18","Debt to equity":"0.2","Period End":"2025-03-31"}])
