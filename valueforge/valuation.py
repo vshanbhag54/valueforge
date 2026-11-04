@@ -47,6 +47,18 @@ def _dcf_per_share(fcf_cr, shares_cr, growth, discount, terminal_growth):
 
 
 def _value_row(row):
+    if str(row.get("financial_quality_status") or "") != "VALIDATED":
+        return {
+            "dcf_fair_value_bear": None,
+            "dcf_fair_value_base": None,
+            "dcf_fair_value_bull": None,
+            "shares_outstanding_crore": None,
+            "dcf_growth_assumption_pct": None,
+            "dcf_base_discount_rate_pct": round(DISCOUNT_SCENARIOS["base"] * 100, 2),
+            "dcf_terminal_growth_pct": round(TERMINAL_GROWTH * 100, 2),
+            "margin_of_safety_pct": None,
+            "valuation_status": "FINANCIAL_DATA_NOT_VALIDATED",
+        }
     fcf = _finite(row.get("fcf"))
     paid_up_cr = _finite(row.get("paid_up_capital"))
     face_value = _finite(row.get("face_value"))
@@ -97,8 +109,8 @@ def apply_intrinsic_valuation(frame):
     based on half the weaker verified five-year sales and profit CAGR,
     clipped to -5%..8%. It is a conservative screening proxy, not a formal
     appraisal: banks/insurers are excluded by the research screen, and
-    companies without verified FCF, share count, and five-year growth history
-    remain unvalued rather than receiving an invented fair value.
+    companies without verified statements, FCF, share count, and five-year
+    growth history remain unvalued rather than receiving an invented fair value.
     """
     if frame.empty:
         return frame.copy()
