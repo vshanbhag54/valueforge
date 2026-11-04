@@ -35,13 +35,17 @@ def parse_number(v):
     if v is None or (isinstance(v,float) and math.isnan(v)): return float("nan")
     if isinstance(v,(int,float)): return float(v)
     s=str(v).strip().replace(",","").replace("₹","").replace("%","")
-    s=re.sub(r"(?i)\\b(rs\\.?|cr\\.?|crores?|x)\\b","",s).strip()
+    s=re.sub(r"(?i)\b(rs\.?|cr\.?|crores?|x)\b","",s).strip()
     if s.upper() in {"","-","—","NA","N/A","NM"}: return float("nan")
     neg=s.startswith("(") and s.endswith(")")
     try:
         x=float(s.strip("() "))
         return -x if neg else x
     except ValueError: return float("nan")
+
+def _clean_identifier(series):
+    result=series.astype("string").str.strip().str.upper()
+    return result.mask(result.isin(["","NAN","NONE","<NA>"]))
 
 def normalize_fundamentals(frame,source_label="User-uploaded Screener/export"):
     raw=frame.copy(); lookup={_key(c):c for c in raw.columns}; out=pd.DataFrame(index=raw.index)
@@ -51,7 +55,7 @@ def normalize_fundamentals(frame,source_label="User-uploaded Screener/export"):
     for field in NUMERIC:
         if field in out: out[field]=out[field].map(parse_number)
     for field in ("symbol","isin","exchange"):
-        if field in out: out[field]=out[field].astype(str).str.strip().str.upper()
+        if field in out: out[field]=_clean_identifier(out[field])
     if "exchange" not in out: out["exchange"]="UNKNOWN"
     if "basis" not in out: out["basis"]="unknown"
     if "source_url" not in out: out["source_url"]=pd.NA
