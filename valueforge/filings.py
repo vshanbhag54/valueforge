@@ -17,6 +17,23 @@ PARSER_VERSION = "3"
 INITIAL_BACKFILL_DAYS = 1825
 
 
+def _strict_flag(value):
+    """Unknown result classifications are false, never silently affirmative."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    token = str(value or "").strip().lower().replace("_", " ").replace("-", " ")
+    token = " ".join(token.split())
+    if token in {"y", "yes", "true", "1", "consolidated", "cons", "audited", "cumulative", "cum", "ind as new"}:
+        return True
+    if token in {"n", "no", "false", "0", "standalone", "non consolidated", "unaudited", "un audited", "ind as old", ""}:
+        return False
+    if token.startswith(("non ", "un ", "standalone")):
+        return False
+    return False
+
+
 def _key(record):
     return (record.symbol, record.filing_id or record.xbrl_url or "")
 
@@ -56,24 +73,7 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
 
     from .xbrl_extract import extract_filing_fundamentals
 
-    # The upstream package historically treated unknown truthy words (such
-    # as "Standalone") as consolidated=True. Override that coercion strictly:
-    # an unknown classification must never admit a standalone filing.
-    def strict_flag(value):
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, (int, float)):
-            return bool(value)
-        token = str(value or "").strip().lower().replace("_", " ").replace("-", " ")
-        token = " ".join(token.split())
-        if token in {"y", "yes", "true", "1", "consolidated", "cons", "audited", "cumulative", "cum", "ind as new"}:
-            return True
-        if token in {"n", "no", "false", "0", "standalone", "non consolidated", "unaudited", "un audited", "ind as old", ""}:
-            return False
-        if token.startswith(("non ", "un ", "standalone")):
-            return False
-        return False
-
+    # Apply the module-level strict classifier to every NSE result row.
     original_record_from_row = nse_discovery._record_from_row
     def strict_record_from_row(row, source, seq):
         record = original_record_from_row(row, source, seq)
@@ -87,12 +87,12 @@ def sync_xbrl_filings(lookback_days=45, limit=60, workers=4, today=None):
             record,
             company=str(company or "").strip(),
             isin=str(isin or "").strip() or None,
-            consolidated=strict_flag(consolidated_value),
-            audited=strict_flag(row.get("audited")),
-            cumulative=strict_flag(row.get("cumulative")),
-            ind_as=strict_flag(row.get("ind_as") or row.get("indAs") or row.get("accountingStandard")),
+            consolidated=_strict_flag(consolidated_value),
+            audited=_strict_flag(row.get("audited")),
+            cumulative=_strict_flag(row.get("cumulative")),
+            ind_as=_strict_flag(row.get("ind_as") or row.get("indAs") or row.get("accountingStandard")),
         )
-    nse_discovery._as_bool = strict_flag
+    nse_discovery._as_bool = _strict_flag
     nse_discovery._record_from_row = strict_record_from_row
 
     today = today or date.today()
