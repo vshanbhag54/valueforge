@@ -91,7 +91,7 @@ def normalize_bse_equity(records):
     out["security_code"] = _first(df, ["scrip_cd", "scrip_code", "security_code", "scripcode"]).astype("string").str.strip()
     face = pd.to_numeric(_first(df, ["face_value", "parval"]), errors="coerce")
     # Standard BSE EQ SCRIP master expresses face value in paise.
-    out["face_value"] = face.where(face.isna(), face / 100)
+    out["face_value"] = face
     out["paid_up_value_per_share"] = pd.NA
     out["security_status"] = _first(df, ["status", "scrip_status", "security_status"], "Active").astype("string")
     out["master_source"] = BSE_SCRIP_LIST_URL
@@ -110,7 +110,7 @@ def _request_nse(session):
 def _request_bse(session):
     response = session.get(
         BSE_SCRIP_LIST_URL,
-        params={"segment": "Equity"},
+        params={"segment": "Equity", "status": "Active"},
         headers=BSE_HEADERS,
         timeout=45,
     )
