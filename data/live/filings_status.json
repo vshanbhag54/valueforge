@@ -1,22 +1,22 @@
 {
-  "run_at_utc": "2026-11-04T21:30:33.977847+00:00",
+  "run_at_utc": "2026-11-05T21:34:35.721214+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 2141,
-    "bse_integrated": 5,
-    "usable_xbrl": 671,
-    "new_queue_records": 496
+    "nse": 21,
+    "bse_integrated": 0,
+    "usable_xbrl": 10,
+    "new_queue_records": 10
   },
   "discovery_errors": {},
-  "queue_total": 30179,
-  "pending_before_batch": 30179,
+  "queue_total": 30189,
+  "pending_before_batch": 30189,
   "batch_selected": 500,
   "downloaded": 498,
-  "parsed": 495,
-  "parse_failed": 3,
+  "parsed": 494,
+  "parse_failed": 4,
   "fetch_failed": 2,
   "fetch_stats": {
     "total": 500,
@@ -27,6 +27,16 @@
     "failed": 2
   },
   "processed_filing_keys": [
+    "MPHASIS|210973",
+    "EUROPRATIK|210970",
+    "EUROPRATIK|210966",
+    "DUCON|210964",
+    "NIMBSPROJ|210962",
+    "PARASHLTH|210959",
+    "UNIVASTU|210956",
+    "CELLO|210952",
+    "SAILIFE|210949",
+    "SAATVIKGL|210946",
     "TOKYOPLAST|210022",
     "LENSKART|210020",
     "TRIGYN|210018",
@@ -514,17 +524,7 @@
     "UTTAMSUGAR|207961",
     "RAINBOW|207959",
     "NILAINFRA|207950",
-    "CPL|207947",
-    "IITL|207943",
-    "SURAJEST|207941",
-    "VISHNU|207937",
-    "BIRLACORPN|207917",
-    "NEUEON|207906",
-    "DLINKINDIA|207904",
-    "GEMAROMA|207902",
-    "ZENTEC|207892",
-    "EXXARO|207889",
-    "EVEREADY|207882"
+    "CPL|207947"
   ],
   "pending_after_batch": 29369,
   "state": "COMPLETED_WITH_ERRORS"
