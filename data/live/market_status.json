@@ -3,20 +3,17 @@
   "dataset_id": "tejhq/indian-markets",
   "data_type": "end_of_day_bhavcopy",
   "intraday": false,
-  "retrieved_at_utc": "2026-11-06T21:19:03.893773+00:00",
+  "retrieved_at_utc": "2026-11-10T00:06:57.127301+00:00",
   "exchange_dates": {
-    "NSE": "2026-11-06",
-    "BSE": "2026-11-06"
+    "NSE": "2026-11-09",
+    "BSE": "2026-11-09"
   },
-  "rows": 5694,
+  "rows": 5704,
   "source_files": [
     "nse/year=2026/nse_2026.parquet",
     "bse/year=2026/bse_2026.parquet"
   ],
-  "metric_files": [
-    "metrics/nse_latest.parquet",
-    "metrics/bse_latest.parquet"
-  ],
+  "metric_files": [],
   "coverage_note": "Daily-traded supported NSE EQ/BE/BZ and BSE A/B/T series in the source dataset; not every listed, suspended or non-trading instrument.",
   "source_url": "https://huggingface.co/datasets/tejhq/indian-markets"
 }
