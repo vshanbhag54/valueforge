@@ -1,6 +1,6 @@
 {
-  "retrieved_at_utc": "2026-11-17T23:24:44.022596+00:00",
-  "master_as_of": "2026-11-17",
+  "retrieved_at_utc": "2026-11-18T22:57:19.938663+00:00",
+  "master_as_of": "2026-11-18",
   "sources": {
     "NSE": {
       "status": "OK",
@@ -9,7 +9,7 @@
     },
     "BSE": {
       "status": "OK",
-      "rows": 5144,
+      "rows": 5142,
       "source": "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w"
     }
   },
@@ -17,8 +17,8 @@
     "NSE",
     "BSE"
   ],
-  "rows": 7776,
-  "unique_isins": 5272,
+  "rows": 7774,
+  "unique_isins": 5269,
   "coverage": "COMBINED_NSE_BSE",
   "coverage_note": "Exchange-provided equity security master, not a promise of every historical/delisted instrument. Suspended listings remain listed only if the exchange includes them in its source."
 }
