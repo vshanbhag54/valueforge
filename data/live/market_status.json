@@ -3,12 +3,12 @@
   "dataset_id": "tejhq/indian-markets",
   "data_type": "end_of_day_bhavcopy",
   "intraday": false,
-  "retrieved_at_utc": "2026-11-18T22:57:16.559931+00:00",
+  "retrieved_at_utc": "2026-11-19T23:00:51.246788+00:00",
   "exchange_dates": {
-    "NSE": "2026-11-18",
-    "BSE": "2026-11-18"
+    "NSE": "2026-11-19",
+    "BSE": "2026-11-19"
   },
-  "rows": 5691,
+  "rows": 5683,
   "source_files": [
     "nse/year=2026/nse_2026.parquet",
     "bse/year=2026/bse_2026.parquet"
