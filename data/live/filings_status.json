@@ -1,18 +1,18 @@
 {
-  "run_at_utc": "2026-11-20T22:22:04.822298+00:00",
+  "run_at_utc": "2026-11-24T02:35:19.846718+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 501,
+    "nse": 821,
     "bse_integrated": 0,
-    "usable_xbrl": 179,
-    "new_queue_records": 1
+    "usable_xbrl": 311,
+    "new_queue_records": 3
   },
   "discovery_errors": {},
-  "queue_total": 31011,
-  "pending_before_batch": 31011,
+  "queue_total": 31014,
+  "pending_before_batch": 31014,
   "batch_selected": 500,
   "downloaded": 500,
   "parsed": 498,
@@ -27,6 +27,9 @@
     "failed": 0
   },
   "processed_filing_keys": [
+    "SFCTECH|216223",
+    "VALECHAENG|215988",
+    "GICL|215977",
     "GVPTECH|215948",
     "FOODSIN|215581",
     "LIBAS|215251",
@@ -523,10 +526,7 @@
     "SURAKSHA|212166",
     "TITAGARH|212151",
     "MATRIMONY|212149",
-    "MIDWESTLTD|212146",
-    "VIRINCHI|212142",
-    "ARSSINFRA|212134",
-    "SIMPLEXINF|212124"
+    "MIDWESTLTD|212146"
   ],
   "pending_after_batch": 29381,
   "state": "COMPLETED_WITH_ERRORS"
