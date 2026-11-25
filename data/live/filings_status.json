@@ -1,14 +1,14 @@
 {
-  "run_at_utc": "2026-11-24T02:35:19.846718+00:00",
+  "run_at_utc": "2026-11-25T00:07:04.945974+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 821,
-    "bse_integrated": 0,
-    "usable_xbrl": 311,
-    "new_queue_records": 3
+    "nse": 41,
+    "bse_integrated": 2,
+    "usable_xbrl": 4,
+    "new_queue_records": 0
   },
   "discovery_errors": {},
   "queue_total": 31014,
