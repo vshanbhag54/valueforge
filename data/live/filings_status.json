@@ -1,22 +1,22 @@
 {
-  "run_at_utc": "2026-11-27T00:00:33.740207+00:00",
+  "run_at_utc": "2026-11-27T23:44:15.552117+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 681,
-    "bse_integrated": 0,
-    "usable_xbrl": 246,
+    "nse": 541,
+    "bse_integrated": 1,
+    "usable_xbrl": 183,
     "new_queue_records": 1
   },
   "discovery_errors": {},
-  "queue_total": 31016,
-  "pending_before_batch": 31016,
+  "queue_total": 31017,
+  "pending_before_batch": 31017,
   "batch_selected": 500,
   "downloaded": 500,
-  "parsed": 498,
-  "parse_failed": 2,
+  "parsed": 499,
+  "parse_failed": 1,
   "fetch_failed": 0,
   "fetch_stats": {
     "total": 500,
@@ -27,6 +27,7 @@
     "failed": 0
   },
   "processed_filing_keys": [
+    "KSERASERA|216760",
     "SIMBHALS|216512",
     "SFCTECH|216223",
     "VALECHAENG|215988",
@@ -525,8 +526,7 @@
     "INSPIRISYS|212335",
     "TALBROAUTO|212312",
     "BAJAJHIND|212260",
-    "SURAKSHA|212166",
-    "TITAGARH|212151"
+    "SURAKSHA|212166"
   ],
   "pending_after_batch": 29381,
   "state": "COMPLETED_WITH_ERRORS"
