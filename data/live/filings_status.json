@@ -1,22 +1,22 @@
 {
-  "run_at_utc": "2026-11-25T23:47:17.754708+00:00",
+  "run_at_utc": "2026-11-27T00:00:33.740207+00:00",
   "lookback_days": 45,
   "effective_lookback_days": 45,
   "initial_backfill": false,
   "batch_limit": 500,
   "discovery": {
-    "nse": 61,
+    "nse": 681,
     "bse_integrated": 0,
-    "usable_xbrl": 5,
+    "usable_xbrl": 246,
     "new_queue_records": 1
   },
   "discovery_errors": {},
-  "queue_total": 31015,
-  "pending_before_batch": 31015,
+  "queue_total": 31016,
+  "pending_before_batch": 31016,
   "batch_selected": 500,
   "downloaded": 500,
-  "parsed": 499,
-  "parse_failed": 1,
+  "parsed": 498,
+  "parse_failed": 2,
   "fetch_failed": 0,
   "fetch_stats": {
     "total": 500,
@@ -215,6 +215,7 @@
     "VLSFINANCE|213993",
     "DONEAR|213990",
     "RELINFRA|213988",
+    "OLIL|213987",
     "TVSSCS|213986",
     "INNOVACAP|213985",
     "SENCO|213977",
@@ -525,8 +526,7 @@
     "TALBROAUTO|212312",
     "BAJAJHIND|212260",
     "SURAKSHA|212166",
-    "TITAGARH|212151",
-    "MATRIMONY|212149"
+    "TITAGARH|212151"
   ],
   "pending_after_batch": 29381,
   "state": "COMPLETED_WITH_ERRORS"
